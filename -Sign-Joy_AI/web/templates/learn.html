@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Joy Learning World</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="bg-orb bg-orb-a"></div>
+    <div class="bg-orb bg-orb-b"></div>
+    <div class="bg-orb bg-orb-c"></div>
+    <div class="bg-grid"></div>
+
+    <nav class="top-nav" aria-label="Main navigation">
+        <a class="brand-mark" href="{{ url_for('index') }}" aria-label="Go to home">
+            <span class="brand-badge" aria-hidden="true">SL</span>
+            <span>Sign Joy</span>
+        </a>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="#inputPanel">Start</a>
+            <a href="#overlayPanel">Animations</a>
+            <a href="#sequencePanel">Signs</a>
+            <a href="#advancedVisualsPanel">More</a>
+        </div>
+    </nav>
+
+    <main class="page app-page">
+        <header id="heroPanel" class="app-header reveal">
+            <div class="app-header-copy">
+                <p class="eyebrow">Learning tool</p>
+                <h1>Make a sign, then watch it come alive.</h1>
+                <p>
+                    Type or speak below. This page keeps all videos, animations, overlays,
+                    and comparison tools together for practice time.
+                </p>
+            </div>
+            <div class="app-header-art" aria-hidden="true">
+                <img
+                    class="app-header-image"
+                    src="{{ url_for('static', filename='assets/hero-cartoon-transparent.png') }}"
+                    alt=""
+                >
+            </div>
+        </header>
+
+        <section id="inputPanel" class="panel reveal">
+            <h2>Type Something to Sign</h2>
+            <label for="textInput" class="label">Your sentence or math idea</label>
+            <textarea id="textInput" rows="3" placeholder="Try: one plus two"></textarea>
+
+            <div class="controls">
+                <button id="processBtn" class="btn btn-primary">Make My Signs</button>
+
+                <button id="micStartBtn" class="btn btn-secondary">Use My Voice</button>
+                <button id="micStopBtn" class="btn btn-ghost" disabled>Stop</button>
+
+                <label for="speechLang" class="label-inline">Speech Language</label>
+                <select id="speechLang">
+                    <option value="en-US" selected>English (en-US)</option>
+                    <option value="si-LK">Sinhala (si-LK)</option>
+                </select>
+            </div>
+
+            <p id="statusLine" class="status">Ready.</p>
+        </section>
+
+        <section id="summaryPanel" class="panel reveal">
+            <h2>Your Learning Snapshot</h2>
+            <div class="summary-grid">
+                <article class="summary-card">
+                    <h3>Detected Language</h3>
+                    <p id="detectedLanguage">-</p>
+                </article>
+                <article class="summary-card">
+                    <h3>English Text</h3>
+                    <p id="englishText">-</p>
+                </article>
+                <article class="summary-card">
+                    <h3>Expression</h3>
+                    <p id="expressionText">-</p>
+                </article>
+                <article class="summary-card">
+                    <h3>Result</h3>
+                    <p id="resultText">-</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="inputUnitsPanel" class="panel reveal">
+            <h2>Building Blocks We Found</h2>
+            <div id="inputUnits" class="unit-grid"></div>
+        </section>
+
+        <section id="overlayPanel" class="panel reveal">
+            <div class="section-head">
+                <h2>Realistic Hand & Body Animation</h2>
+                <div class="inline-actions">
+                    <button id="playOverlayBtn" class="btn btn-secondary" disabled>Play Animation</button>
+                    <button id="stopOverlayBtn" class="btn btn-ghost" disabled>Stop Overlay</button>
+                </div>
+            </div>
+            <p id="overlayStatus" class="meta-note">
+                Process input to stream realistic full-body + face overlay visualization.
+            </p>
+
+            <div class="overlay-split">
+                <div id="overlayStage" class="overlay-stage">
+                    <img
+                        id="overlayStream"
+                        class="overlay-stream"
+                        alt="Realistic OpenCV hand overlay stream"
+                    >
+                    <div class="overlay-placeholder">
+                        Realistic hand + upper-body overlay will appear here.
+                    </div>
+                </div>
+
+                <div id="overlayTokenStage" class="overlay-token-stage">
+                    <div class="overlay-token-card">
+                        <p class="overlay-token-label">Now Signing</p>
+                        <div id="overlayTokenDisplay" class="overlay-token-display">-</div>
+                        <p id="overlayTokenMeta" class="overlay-token-meta">
+                            Process input to animate the current token here.
+                        </p>
+                        <div id="overlayTokenTimeline" class="overlay-token-timeline"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="sequencePanel" class="panel reveal">
+            <div class="section-head">
+                <h2>See Your Sign Clips</h2>
+                <button id="playSequenceBtn" class="btn btn-secondary" disabled>Play Sign Clips</button>
+            </div>
+            <p id="sequenceMode" class="meta-note">-</p>
+            <div id="sequenceUnits" class="sequence-grid"></div>
+            <p id="unmappedUnits" class="warning"></p>
+        </section>
+
+        <section id="skeletonPanel" class="panel reveal">
+            <div class="section-head">
+                <h2>Watch the Cartoon Instructor</h2>
+                <div class="inline-actions">
+                    <button id="playSkeletonBtn" class="btn btn-secondary" disabled>Play Instructor</button>
+                    <button id="stopSkeletonBtn" class="btn btn-ghost" disabled>Stop Instructor</button>
+                </div>
+            </div>
+            <p id="skeletonStatus" class="meta-note">
+                Process input to stream MediaPipe full-body landmarks (hands, shoulders, elbows, face).
+            </p>
+
+            <div id="skeletonStage" class="skeleton-stage">
+                <img
+                    id="skeletonStream"
+                    class="skeleton-stream"
+                    alt="Cartoon instructor hand and body stream"
+                >
+                <div class="skeleton-placeholder">
+                    Cartoon instructor stream will appear here.
+                </div>
+            </div>
+        </section>
+
+        <section id="advancedVisualsPanel" class="panel reveal">
+            <div class="section-head">
+                <h2>More Animation Magic</h2>
+            </div>
+            <div class="controls">
+                <label for="advancedVisualsToggle" class="label-inline">Show 3D and comparison panels</label>
+                <select id="advancedVisualsToggle">
+                    <option value="hide" selected>Hide</option>
+                    <option value="show">Show</option>
+                </select>
+            </div>
+        </section>
+
+        <section id="unityDesktopPanel" class="panel reveal">
+            <div class="section-head">
+                <h2>Unity Desktop Avatar</h2>
+                <div class="inline-actions">
+                    <button id="playUnityDesktopBtn" class="btn btn-secondary" disabled>Play in Unity</button>
+                    <button id="stopUnityDesktopBtn" class="btn btn-ghost" disabled>Stop Unity</button>
+                </div>
+            </div>
+            <p id="unityDesktopStatus" class="meta-note">
+                Process input to send the mapped sign sequence to the Unity desktop avatar over UDP.
+            </p>
+        </section>
+
+        <section id="gesture3DPanel" class="panel reveal" hidden>
+            <div class="section-head">
+                <h2>3D Character Signing</h2>
+                <div class="inline-actions">
+                    <button id="playGesture3DBtn" class="btn btn-secondary" disabled>Play 3D Gesture</button>
+                    <button id="stopGesture3DBtn" class="btn btn-ghost" disabled>Stop 3D Gesture</button>
+                </div>
+            </div>
+            <p id="gesture3DStatus" class="meta-note">
+                Process input to animate a 3D character from hands + shoulders/elbows + face landmarks.
+            </p>
+
+            <div class="gesture3d-stage">
+                <canvas id="gesture3DCanvas" class="gesture3d-canvas" aria-label="3D hand and character canvas"></canvas>
+                <div id="gesture3DFallback" class="gesture3d-fallback" hidden>
+                    3D gesture model unavailable in this browser.
+                </div>
+            </div>
+
+            <p class="avatar-current">
+                Current Token: <span id="gesture3DCurrentToken">-</span>
+            </p>
+            <div id="gesture3DTimeline" class="avatar-timeline"></div>
+        </section>
+
+        <section id="signAvatarPanel" class="panel reveal" hidden>
+            <div class="section-head">
+                <h2>Fun Sign Comparison</h2>
+                <div class="inline-actions">
+                    <button id="playSignAvatarBtn" class="btn btn-secondary" disabled>Play Comparison</button>
+                    <button id="stopSignAvatarBtn" class="btn btn-ghost" disabled>Stop Comparison</button>
+                </div>
+            </div>
+
+            <p id="signAvatarStatus" class="meta-note">
+                Process input to prepare the avatar and ground-truth comparison view.
+            </p>
+            <p id="signAvatarCurrentToken" class="avatar-current sign-avatar-current">
+                Current Token: -
+            </p>
+
+            <div class="sign-avatar-top-row">
+                <div class="sign-avatar-icon" aria-hidden="true">
+                    <span class="sign-avatar-icon-head"></span>
+                    <span class="sign-avatar-icon-body"></span>
+                </div>
+                <div class="sign-avatar-textbox">
+                    <p class="sign-avatar-text-label">HamNoSys / Token Sequence</p>
+                    <div id="signAvatarText" class="sign-avatar-text">-</div>
+                </div>
+            </div>
+
+            <div class="sign-avatar-comparison">
+                <article class="sign-avatar-column">
+                    <div class="sign-avatar-stage gesture3d-stage">
+                        <canvas id="signAvatarCanvas" class="gesture3d-canvas sign-avatar-canvas" aria-label="SignAvatars-style avatar canvas"></canvas>
+                        <div id="signAvatarFallback" class="gesture3d-fallback sign-avatar-fallback" hidden>
+                            SignAvatars-style avatar unavailable in this browser.
+                        </div>
+                    </div>
+                    <p class="sign-avatar-caption">Our Generation Results and Character Driven</p>
+                </article>
+
+                <article class="sign-avatar-column">
+                    <div id="signAvatarGroundTruthStage" class="sign-avatar-ground-truth-stage">
+                        <video
+                            id="signAvatarGroundTruthVideo"
+                            class="sign-avatar-ground-truth-video"
+                            controls
+                            preload="metadata"
+                            playsinline
+                        ></video>
+                        <div class="sign-avatar-ground-truth-placeholder">
+                            Ground truth mapped video will appear here.
+                        </div>
+                    </div>
+                    <p class="sign-avatar-caption">Ground Truth Video</p>
+                </article>
+            </div>
+        </section>
+
+        <footer class="friendly-footer reveal">
+            <p>Learning sign language can be fun. Keep practicing, keep exploring, and enjoy every new sign you discover.</p>
+        </footer>
+</main>
+
+    <template id="unitChipTemplate">
+        <div class="unit-chip">
+            <span class="chip-main"></span>
+            <span class="chip-sub"></span>
+        </div>
+    </template>
+
+    <template id="sequenceCardTemplate">
+        <article class="sequence-card">
+            <div class="token-head">
+                <span class="token-label"></span>
+                <span class="token-kind"></span>
+            </div>
+            <div class="media-wrap"></div>
+        </article>
+    </template>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "{{ url_for('static', filename='vendor/three.module.js') }}"
+            }
+        }
+    </script>
+
+    <script>
+        (function () {
+            const assetVersion = Date.now();
+            const scripts = [
+                "https://unpkg.com/three@0.160.0/build/three.min.js",
+                "{{ url_for('static', filename='vendor/three.min.js') }}?v=" + assetVersion,
+            ];
+
+            function loadScript(src) {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement("script");
+                    script.src = src;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+
+            async function boot() {
+                for (const src of scripts) {
+                    try {
+                        await loadScript(src);
+                        if (window.THREE) break;
+                    } catch (error) {
+                        // Try the next source.
+                    }
+                }
+
+                await loadScript("{{ url_for('static', filename='gesture3d.js') }}?v=" + assetVersion);
+                await loadScript("{{ url_for('static', filename='app.js') }}?v=" + assetVersion);
+            }
+
+            boot();
+        }());
+    </script>
+</body>
+</html>

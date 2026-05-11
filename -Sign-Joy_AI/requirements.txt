@@ -1,0 +1,10 @@
+speechrecognition
+# Optional for speech microphone mode:
+# pyaudio
+googletrans==4.0.0-rc1
+legacy-cgi
+flask
+opencv-python
+mediapipe==0.10.21
+# Optional for training/prediction scripts:
+# tensorflow

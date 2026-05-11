@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 160" role="img" aria-labelledby="title desc">
+  <title id="title">Typing and speaking illustration</title>
+  <desc id="desc">A cheerful tablet, speech bubble, and microphone.</desc>
+  <defs>
+    <linearGradient id="screen" x1="35" y1="34" x2="154" y2="136" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E9FAFF"/>
+      <stop offset="1" stop-color="#BFEAFF"/>
+    </linearGradient>
+    <linearGradient id="coral" x1="121" y1="23" x2="190" y2="101" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF88B5"/>
+      <stop offset="1" stop-color="#FF9C6E"/>
+    </linearGradient>
+  </defs>
+  <path fill="#DDF7E5" d="M28 108c-8-20 4-48 25-65 24-19 61-23 88-8 28 15 43 51 33 77-10 27-47 44-84 42-31-2-53-18-62-46Z"/>
+  <rect x="45" y="31" width="94" height="112" rx="22" fill="#1F5871"/>
+  <rect x="54" y="42" width="76" height="86" rx="14" fill="url(#screen)"/>
+  <circle cx="92" cy="135" r="5" fill="#FFFFFF"/>
+  <path fill="#FFFFFF" d="M84 68h36v10H84zM68 88h52v9H68zM68 106h34v9H68z"/>
+  <path fill="#146694" d="M151 84c-11 0-20-9-20-20s9-20 20-20h24c11 0 20 9 20 20s-9 20-20 20h-7l-14 13 3-13h-6Z"/>
+  <path fill="url(#coral)" d="M155 51h20c8 0 14 6 14 14s-6 14-14 14h-20c-8 0-14-6-14-14s6-14 14-14Z"/>
+  <circle cx="156" cy="65" r="3" fill="#FFFFFF"/>
+  <circle cx="165" cy="65" r="3" fill="#FFFFFF"/>
+  <circle cx="174" cy="65" r="3" fill="#FFFFFF"/>
+  <path fill="#FFCF99" d="M144 118c0-13 10-24 23-24s23 11 23 24v12c0 10-8 18-18 18h-10c-10 0-18-8-18-18v-12Z"/>
+  <rect x="158" y="86" width="18" height="44" rx="9" fill="#FFB884"/>
+  <path stroke="#17384F" stroke-width="6" stroke-linecap="round" d="M151 137h32M167 143v10"/>
+  <path fill="#FFFFFF" d="M161 99h12v26h-12z" opacity=".42"/>
+</svg>

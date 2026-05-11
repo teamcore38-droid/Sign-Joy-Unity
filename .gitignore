@@ -1,0 +1,41 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.sixth/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Unity generated folders and files
+Unity/[Ll]ibrary/
+Unity/[Tt]emp/
+Unity/[Ll]ogs/
+Unity/[Oo]bj/
+Unity/[Bb]uild/
+Unity/[Bb]uilds/
+Unity/[Uu]ser[Ss]ettings/
+Unity/.vs/
+Unity/*.csproj
+Unity/*.sln
+Unity/*.user
+Unity/*.pidb
+Unity/*.suo
+Unity/*.tmp
+Unity/*.booproj
+Unity/*.svd
+Unity/*.pdb
+Unity/*.mdb
+Unity/*.opendb
+Unity/*.VC.db
+
+# SignJoy runtime outputs
+-Sign-Joy_AI/outputs/
+-Sign-Joy_AI/*.log
+-Sign-Joy_AI/*.err

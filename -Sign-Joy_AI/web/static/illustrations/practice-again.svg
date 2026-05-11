@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 160" role="img" aria-labelledby="title desc">
+  <title id="title">Practicing again illustration</title>
+  <desc id="desc">A playful repeat path with stars and learning cards.</desc>
+  <defs>
+    <linearGradient id="cardA" x1="42" y1="46" x2="112" y2="117" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF8CE"/>
+      <stop offset="1" stop-color="#FFE2C9"/>
+    </linearGradient>
+    <linearGradient id="cardB" x1="111" y1="35" x2="182" y2="113" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE6F2"/>
+      <stop offset="1" stop-color="#DFF4FF"/>
+    </linearGradient>
+  </defs>
+  <path fill="#FFEAF4" d="M26 93C14 57 45 21 91 15c45-6 92 16 103 53 11 36-14 73-54 83-42 10-101-16-114-58Z"/>
+  <rect x="43" y="48" width="67" height="82" rx="20" fill="url(#cardA)" stroke="#FFFFFF" stroke-width="6"/>
+  <rect x="110" y="34" width="67" height="82" rx="20" fill="url(#cardB)" stroke="#FFFFFF" stroke-width="6"/>
+  <path fill="#146694" d="M65 75h24v10H65zM65 95h30v9H65zM132 62h24v10h-24zM132 82h30v9h-30z"/>
+  <path fill="#FF8BAF" d="m87 34 5 11 12 2-9 8 2 12-10-6-11 6 3-12-9-8 12-2 5-11Z"/>
+  <path fill="#67C98B" d="m166 115 4 8 9 1-7 6 2 9-8-4-8 4 2-9-7-6 9-1 4-8Z"/>
+  <path fill="none" stroke="#17384F" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" d="M54 48c21-25 64-34 97-16M173 55l-2-24-23 5"/>
+  <path fill="none" stroke="#17384F" stroke-linecap="round" stroke-linejoin="round" stroke-width="8" d="M169 119c-27 22-75 24-106 1M43 96l6 24 22-9"/>
+  <circle cx="31" cy="56" r="7" fill="#79C8FF"/>
+  <circle cx="192" cy="88" r="7" fill="#FFF3A8"/>
+</svg>

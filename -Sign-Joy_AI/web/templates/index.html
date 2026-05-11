@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Joy | Playful Sign Language Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="landing-page sj-landing-page">
+    <div class="sj-bg-orb sj-bg-orb-one" aria-hidden="true"></div>
+    <div class="sj-bg-orb sj-bg-orb-two" aria-hidden="true"></div>
+    <div class="sj-bg-orb sj-bg-orb-three" aria-hidden="true"></div>
+
+    <nav class="sj-nav" aria-label="Main navigation">
+        <a class="sj-logo" href="#home" aria-label="Sign Joy home">
+            <span class="sj-logo-mark" aria-hidden="true">✋</span>
+            <span>Sign <strong>Joy</strong></span>
+        </a>
+        <div class="sj-nav-links">
+            <a href="#why-helps">Why it helps</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#lessons">Lessons</a>
+            <a href="#videos">Videos</a>
+        </div>
+        <a class="sj-nav-button" href="{{ url_for('learn') }}">Open App</a>
+    </nav>
+
+    <main id="home" class="sj-page">
+        <section class="sj-hero reveal" aria-labelledby="heroTitle">
+            <div class="sj-hero-copy">
+                <p class="sj-badge"><span aria-hidden="true">♥</span> A brighter way to connect</p>
+                <h1 id="heroTitle">Learn Sign Language. Have Fun. <span>Share Joy.</span></h1>
+                <p class="sj-hero-subtitle">
+                    Sign Joy helps kids learn signs, build vocabulary, and express themselves
+                    with confidence — through play, videos, and interactive lessons.
+                </p>
+                <div class="sj-hero-actions">
+                    <a class="sj-btn sj-btn-primary" href="{{ url_for('learn') }}">Start Learning</a>
+                    <button
+                        class="sj-btn sj-btn-secondary"
+                        type="button"
+                        data-open-demo
+                        data-demo-src="{{ url_for('static', filename='assets/hero watch demo video.mp4') }}"
+                        data-demo-title="Watch the hero demo video"
+                    >
+                        <span class="sj-play-dot" aria-hidden="true">▶</span>
+                        Watch Demo
+                    </button>
+                </div>
+                <div class="sj-loved-row" aria-label="Loved by kids and parents">
+                    <div class="sj-avatar-stack" aria-hidden="true">
+                        <span>👧</span>
+                        <span>🧒</span>
+                        <span>👦</span>
+                        <span>👩</span>
+                    </div>
+                    <div>
+                        <p class="sj-stars" aria-label="Five stars">★★★★★</p>
+                        <p>Loved by kids and parents</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sj-hero-art" aria-label="Playful Sign Joy learning illustration">
+                <div class="sj-doodle sj-doodle-star sj-doodle-one" aria-hidden="true">★</div>
+                <div class="sj-doodle sj-doodle-heart" aria-hidden="true">♥</div>
+                <div class="sj-doodle sj-doodle-spark" aria-hidden="true">✦</div>
+                <div class="sj-doodle sj-doodle-note" aria-hidden="true">♫</div>
+                <div class="sj-doodle sj-doodle-loop" aria-hidden="true">◌</div>
+
+                <div class="sj-speech-bubble">Learn with<br>Videos, Games<br>&amp; Practice!</div>
+
+                <img
+                    class="sj-hero-cartoon-image"
+                    src="{{ url_for('static', filename='assets/hero-cartoon-transparent.png') }}"
+                    alt=""
+                >
+
+                <div class="sj-tablet-preview">
+                    <div class="sj-tablet-bar">Lesson 8</div>
+                    <h3>Hello</h3>
+                    <div class="sj-tablet-main">
+                        <span class="sj-tablet-face">🙂</span>
+                        <span class="sj-tablet-hand">🤟</span>
+                    </div>
+                    <p>HELLO</p>
+                </div>
+
+                <div class="sj-hero-plant" aria-hidden="true">
+                    <span class="sj-plant-leaf sj-plant-leaf-left"></span>
+                    <span class="sj-plant-leaf sj-plant-leaf-mid"></span>
+                    <span class="sj-plant-leaf sj-plant-leaf-right"></span>
+                    <span class="sj-plant-pot"></span>
+                </div>
+
+                <div class="sj-hero-crayon" aria-hidden="true">
+                    <span class="sj-hero-crayon-tip"></span>
+                </div>
+
+                <div class="sj-hero-star-buddy" aria-hidden="true">
+                    <span class="sj-star-face sj-star-eye-left"></span>
+                    <span class="sj-star-face sj-star-eye-right"></span>
+                    <span class="sj-star-smile"></span>
+                </div>
+            </div>
+        </section>
+
+        <section id="videos" class="sj-section sj-split-section reveal" aria-labelledby="videoLessonsTitle">
+            <div id="lessons" class="sj-card sj-video-panel">
+                <div class="sj-section-head">
+                    <h2 id="videoLessonsTitle"><span aria-hidden="true">🎥</span> Featured Video Lessons</h2>
+                    <a href="{{ url_for('learn') }}">View all videos →</a>
+                </div>
+                <div class="sj-lesson-grid">
+                    <article class="sj-lesson-card">
+                        <div class="sj-lesson-thumb sj-thumb-greetings">
+                            <span class="sj-thumb-person" aria-hidden="true">👧</span>
+                            <button
+                                class="sj-play-button"
+                                type="button"
+                                data-open-demo
+                                data-demo-src="{{ url_for('static', filename='assets/Greeting video.mp4') }}"
+                                data-demo-title="Greetings lesson"
+                                aria-label="Play Greetings lesson video"
+                            >▶</button>
+                            <span class="sj-duration">1:24</span>
+                        </div>
+                        <h3>Greetings</h3>
+                        <p>Say hello and be friendly 👋</p>
+                    </article>
+                    <article class="sj-lesson-card">
+                        <div class="sj-lesson-thumb sj-thumb-emotions">
+                            <span class="sj-thumb-person" aria-hidden="true">🧒</span>
+                            <button
+                                class="sj-play-button"
+                                type="button"
+                                data-open-demo
+                                data-demo-src="{{ url_for('static', filename='assets/Emotions Video.mp4') }}"
+                                data-demo-title="Emotions lesson"
+                                aria-label="Play Emotions lesson video"
+                            >▶</button>
+                            <span class="sj-duration">1:37</span>
+                        </div>
+                        <h3>Emotions</h3>
+                        <p>Express how you feel 😊</p>
+                    </article>
+                    <article class="sj-lesson-card">
+                        <div class="sj-lesson-thumb sj-thumb-animals">
+                            <span class="sj-thumb-person" aria-hidden="true">🐶</span>
+                            <button
+                                class="sj-play-button"
+                                type="button"
+                                data-open-demo
+                                data-demo-src="{{ url_for('static', filename='assets/Animals.mp4') }}"
+                                data-demo-title="Animals lesson"
+                                aria-label="Play Animals lesson video"
+                            >▶</button>
+                            <span class="sj-duration">1:15</span>
+                        </div>
+                        <h3>Animals</h3>
+                        <p>Learn animal signs 🐾</p>
+                    </article>
+                </div>
+            </div>
+
+            <div class="sj-card sj-picture-panel">
+                <div class="sj-section-head">
+                    <h2><span aria-hidden="true">🖼</span> Learn with Pictures</h2>
+                    <a href="{{ url_for('learn') }}">Explore all →</a>
+                </div>
+                <div class="sj-picture-grid">
+                    <article class="sj-picture-card">
+                        <span aria-hidden="true">☀️</span>
+                        <h3>Sun</h3>
+                    </article>
+                    <article class="sj-picture-card">
+                        <span aria-hidden="true">🌸</span>
+                        <h3>Flower</h3>
+                    </article>
+                    <article class="sj-picture-card">
+                        <span aria-hidden="true">☕</span>
+                        <h3>Cup</h3>
+                    </article>
+                </div>
+                <div class="sj-dots" aria-label="Picture lesson pages">
+                    <span class="active"></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="sj-game-band reveal" aria-labelledby="practiceTitle">
+            <div class="sj-game-copy">
+                <span class="sj-game-icon" aria-hidden="true">🎮</span>
+                <h2 id="practiceTitle">Play, Practice &amp; Earn</h2>
+                <p>Fun games that help you remember and master signs!</p>
+                <a class="sj-btn sj-btn-purple" href="{{ url_for('learn') }}">Play Games</a>
+            </div>
+            <div class="sj-game-grid">
+                <article>
+                    <span aria-hidden="true">🧩</span>
+                    <h3>Match It!</h3>
+                </article>
+                <article>
+                    <span aria-hidden="true">🧠</span>
+                    <h3>Memory Cards</h3>
+                </article>
+                <article>
+                    <span aria-hidden="true">☝️</span>
+                    <h3>Sign Builder</h3>
+                </article>
+                <article>
+                    <span aria-hidden="true">⭐</span>
+                    <h3>Star Challenge</h3>
+                </article>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="sj-card sj-how-section reveal" aria-labelledby="howTitle">
+            <h2 id="howTitle">How It Works</h2>
+            <div class="sj-how-grid">
+                <article>
+                    <span class="sj-step-number">1</span>
+                    <div class="sj-step-icon">📺</div>
+                    <h3>Watch &amp; Learn</h3>
+                    <p>Watch fun videos and learn new signs.</p>
+                </article>
+                <article>
+                    <span class="sj-step-number">2</span>
+                    <div class="sj-step-icon">🤟</div>
+                    <h3>Practice</h3>
+                    <p>Practice with pictures, quizzes, and games.</p>
+                </article>
+                <article>
+                    <span class="sj-step-number">3</span>
+                    <div class="sj-step-icon">⭐</div>
+                    <h3>Build &amp; Share</h3>
+                    <p>Build your skills and share joy with others!</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="why-helps" class="sj-section sj-benefit-layout reveal" aria-labelledby="benefitsTitle">
+            <div class="sj-card sj-benefit-panel">
+                <h2 id="benefitsTitle">Why Parents &amp; Teachers Love Sign Joy</h2>
+                <div class="sj-benefit-grid">
+                    <article>
+                        <span aria-hidden="true">💗</span>
+                        <h3>Builds Confidence</h3>
+                        <p>Helps kids express themselves and feel more confident.</p>
+                    </article>
+                    <article>
+                        <span aria-hidden="true">🧠</span>
+                        <h3>Supports Learning</h3>
+                        <p>Improves memory, focus, and language development.</p>
+                    </article>
+                    <article>
+                        <span aria-hidden="true">🧑‍🤝‍🧑</span>
+                        <h3>Inclusive &amp; Kind</h3>
+                        <p>Encourages empathy, connection, and inclusion for all.</p>
+                    </article>
+                    <article>
+                        <span aria-hidden="true">🛡️</span>
+                        <h3>Safe &amp; Kid-Friendly</h3>
+                        <p>Ad-free, secure, and designed for children of all ages.</p>
+                    </article>
+                </div>
+            </div>
+
+            <aside class="sj-card sj-testimonial" aria-label="Child testimonial">
+                <div class="sj-testimonial-avatar" aria-hidden="true">👧</div>
+                <p class="sj-stars" aria-label="Five stars">★★★★★</p>
+                <blockquote>
+                    “Sign Joy is my favorite! I love learning new signs and playing the games.”
+                </blockquote>
+                <p class="sj-quote-name">– Ava, Age 7</p>
+            </aside>
+        </section>
+
+        <section class="sj-bottom-cta reveal" aria-labelledby="ctaTitle">
+            <div class="sj-mascot sj-mascot-left" aria-hidden="true">🐨</div>
+            <div class="sj-cta-copy">
+                <h2 id="ctaTitle">Ready to start your signing adventure?</h2>
+                <p>Join thousands of happy learners and discover the joy of sign language!</p>
+                <div class="sj-hero-actions sj-cta-actions">
+                    <a class="sj-btn sj-btn-primary" href="{{ url_for('learn') }}">Start Learning Now</a>
+                    <button
+                        class="sj-btn sj-btn-secondary"
+                        type="button"
+                        data-open-demo
+                        data-demo-src="{{ url_for('static', filename='assets/hero watch demo video.mp4') }}"
+                        data-demo-title="Watch the hero demo video"
+                    >
+                        <span class="sj-play-dot" aria-hidden="true">▶</span>
+                        Watch Demo
+                    </button>
+                </div>
+            </div>
+            <div class="sj-mascot sj-mascot-right" aria-hidden="true">🐰</div>
+            <div class="sj-rainbow" aria-hidden="true"></div>
+        </section>
+
+        <dialog id="sjDemoDialog" class="sj-demo-dialog" aria-labelledby="sjDemoTitle">
+            <form method="dialog" class="sj-demo-shell">
+                <div class="sj-demo-head">
+                    <div>
+                        <p class="sj-demo-eyebrow">Sign Joy Demo</p>
+                        <h2 id="sjDemoTitle">Watch the hero demo video</h2>
+                    </div>
+                    <button type="submit" class="sj-demo-close" aria-label="Close demo video">×</button>
+                </div>
+                <div class="sj-demo-frame">
+                    <video
+                        id="sjDemoVideo"
+                        class="sj-demo-video"
+                        controls
+                        playsinline
+                        preload="metadata"
+                    ></video>
+                </div>
+            </form>
+        </dialog>
+
+        <footer class="sj-footer">
+            <a class="sj-logo" href="#home" aria-label="Sign Joy home">
+                <span class="sj-logo-mark" aria-hidden="true">✋</span>
+                <span>Sign <strong>Joy</strong></span>
+            </a>
+            <p>Learning sign language can be fun. Keep practicing, keep exploring, and enjoy every new sign you discover.</p>
+            <div class="sj-footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact Us</a>
+            </div>
+            <small>© 2024 Sign Joy. All rights reserved.</small>
+        </footer>
+    </main>
+
+    <script>
+        (function () {
+            const dialog = document.getElementById("sjDemoDialog");
+            const video = document.getElementById("sjDemoVideo");
+            const title = document.getElementById("sjDemoTitle");
+            const openButtons = document.querySelectorAll("[data-open-demo]");
+
+            if (!dialog || !video || !title || !openButtons.length) return;
+
+            const openDialog = async (event) => {
+                const trigger = event.currentTarget;
+                const nextSrc = trigger.getAttribute("data-demo-src") || "";
+                const nextTitle = trigger.getAttribute("data-demo-title") || "Watch demo";
+
+                if (!nextSrc) return;
+
+                title.textContent = nextTitle;
+                if (video.getAttribute("src") !== nextSrc) {
+                    video.pause();
+                    video.setAttribute("src", nextSrc);
+                    video.load();
+                }
+
+                if (typeof dialog.showModal === "function") {
+                    dialog.showModal();
+                } else {
+                    dialog.setAttribute("open", "open");
+                }
+
+                try {
+                    video.currentTime = 0;
+                    const playAttempt = video.play();
+                    if (playAttempt && typeof playAttempt.catch === "function") {
+                        await playAttempt.catch(() => {});
+                    }
+                } catch (error) {
+                    // Leave controls available even if autoplay is blocked.
+                }
+            };
+
+            const closeDialog = () => {
+                video.pause();
+                try {
+                    video.currentTime = 0;
+                } catch (error) {
+                    // Ignore browsers that block immediate seek after close.
+                }
+                if (dialog.open && typeof dialog.close === "function") {
+                    dialog.close();
+                } else {
+                    dialog.removeAttribute("open");
+                }
+            };
+
+            openButtons.forEach((button) => {
+                button.addEventListener("click", openDialog);
+            });
+
+            dialog.addEventListener("close", () => {
+                video.pause();
+                try {
+                    video.currentTime = 0;
+                } catch (error) {
+                    // No-op.
+                }
+            });
+
+            dialog.addEventListener("cancel", () => {
+                video.pause();
+                try {
+                    video.currentTime = 0;
+                } catch (error) {
+                    // No-op.
+                }
+            });
+
+            dialog.addEventListener("click", (event) => {
+                const rect = dialog.getBoundingClientRect();
+                const inside =
+                    event.clientX >= rect.left
+                    && event.clientX <= rect.right
+                    && event.clientY >= rect.top
+                    && event.clientY <= rect.bottom;
+                if (!inside) closeDialog();
+            });
+        }());
+    </script>
+</body>
+</html>
