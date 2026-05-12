@@ -89,7 +89,7 @@ const isOverlayDisplayMode = displayTarget === "overlay";
 const presentationChannelName = "sign-math-overlay-sync";
 const presentationStorageKey = "sign-math-overlay-sync-event";
 const presentationOverlayStartLeadMs = 700;
-const presentationUnityStartLeadMs = 2000;
+const presentationUnityStartLeadMs = 350;
 const presentationEventMaxAgeMs = 30000;
 const presentationServerPollMs = 200;
 const presentationTabId = window.crypto && typeof window.crypto.randomUUID === "function"
@@ -98,6 +98,24 @@ const presentationTabId = window.crypto && typeof window.crypto.randomUUID === "
 const presentationChannel = typeof window.BroadcastChannel === "function"
     ? new window.BroadcastChannel(presentationChannelName)
     : null;
+const unityStarterWarmPaths = [
+    "1. one/1. one_001.mp4",
+    "2. two/2. two_001.mp4",
+    "3. three/3. three_001.mov",
+    "4. four/4. four_001.mp4",
+    "5. five/5. five_001.mp4",
+    "Addition/Addition_001.mov",
+    "Equal/Equal_001.mp4",
+];
+const unityPrecomputedClipSources = {
+    "1. one/1. one_001.mp4": "/static/unity-precomputed/one-001.json",
+    "2. two/2. two_001.mp4": "/static/unity-precomputed/two-001.json",
+    "3. three/3. three_001.mov": "/static/unity-precomputed/three-001.json",
+    "4. four/4. four_001.mp4": "/static/unity-precomputed/four-001.json",
+    "5. five/5. five_001.mp4": "/static/unity-precomputed/five-001.json",
+    "Addition/Addition_001.mov": "/static/unity-precomputed/addition-001.json",
+    "Equal/Equal_001.mp4": "/static/unity-precomputed/equal-001.json",
+};
 
 let recognition = null;
 let mappedVideoEntries = [];
@@ -142,6 +160,9 @@ let unityWebRuntimePromise = null;
 let unityWebInstance = null;
 let unityWebScriptUrl = "";
 let unityDisplayWindowRef = null;
+const unityWebClipFrameCache = new Map();
+const unityWebFrameFetchPromises = new Map();
+let unityWebBackgroundWarmStarted = false;
 
 const gesture3DLibReady = Boolean(window.GestureCharacter3D);
 const gesture3DModel = gesture3DLibReady
@@ -593,6 +614,109 @@ async function ensureUnityWebRuntime() {
     return unityWebRuntimePromise;
 }
 
+function getUnityWebCacheKey(paths) {
+    return Array.isArray(paths)
+        ? paths.map((path) => String(path || "").trim()).filter(Boolean).join("|")
+        : "";
+}
+
+function cloneUnityWebClipFrames(path, sequenceIndex) {
+    const clipFrames = unityWebClipFrameCache.get(path);
+    if (!Array.isArray(clipFrames) || !clipFrames.length) {
+        return [];
+    }
+
+    return clipFrames.map((frame) => ({
+        ...frame,
+        sequence_index: sequenceIndex,
+    }));
+}
+
+function buildUnityWebFramesFromClipCache(paths) {
+    if (!Array.isArray(paths) || !paths.length) {
+        return [];
+    }
+
+    const assembledFrames = [];
+    for (const [sequenceIndex, path] of paths.entries()) {
+        if (!unityWebClipFrameCache.has(path)) {
+            return [];
+        }
+        assembledFrames.push(...cloneUnityWebClipFrames(path, sequenceIndex));
+    }
+    return assembledFrames;
+}
+
+function ingestUnityWebSequenceFrames(paths, frames) {
+    if (!Array.isArray(paths) || !paths.length || !Array.isArray(frames) || !frames.length) {
+        return;
+    }
+
+    const clipBuckets = new Map();
+    for (const frame of frames) {
+        const sequenceIndex = Number(frame?.sequence_index);
+        if (!Number.isInteger(sequenceIndex) || sequenceIndex < 0 || sequenceIndex >= paths.length) {
+            continue;
+        }
+
+        const clipPath = paths[sequenceIndex];
+        if (!clipBuckets.has(clipPath)) {
+            clipBuckets.set(clipPath, []);
+        }
+
+        const cachedFrame = { ...frame };
+        delete cachedFrame.sequence_index;
+        clipBuckets.get(clipPath).push(cachedFrame);
+    }
+
+    clipBuckets.forEach((clipFrames, clipPath) => {
+        if (clipFrames.length) {
+            unityWebClipFrameCache.set(clipPath, clipFrames);
+        }
+    });
+}
+
+async function fetchUnityWebSequenceFrames(paths) {
+    const cacheKey = getUnityWebCacheKey(paths);
+    if (!cacheKey) {
+        return [];
+    }
+
+    if (unityWebFrameFetchPromises.has(cacheKey)) {
+        return unityWebFrameFetchPromises.get(cacheKey);
+    }
+
+    const precomputedSource = paths.length === 1
+        ? unityPrecomputedClipSources[paths[0]] || ""
+        : "";
+    const sourceUrl = precomputedSource
+        ? precomputedSource
+        : `/api/unity/sequence?paths=${encodeURIComponent(cacheKey)}`;
+    const requestPromise = fetch(sourceUrl, {
+        headers: { Accept: "application/json" },
+    })
+        .then(async (response) => {
+            const contentType = response.headers.get("content-type") || "";
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} while loading Unity frame sequence.`);
+            }
+            if (!contentType.includes("application/json")) {
+                throw new Error("Unity frame endpoint returned non-JSON content.");
+            }
+
+            const data = await response.json();
+            const frames = Array.isArray(data.frames) ? data.frames : [];
+            ingestUnityWebSequenceFrames(paths, frames);
+            return frames;
+        })
+        .finally(() => {
+            unityWebFrameFetchPromises.delete(cacheKey);
+        });
+
+    unityWebFrameFetchPromises.set(cacheKey, requestPromise);
+    return requestPromise;
+}
+
 async function loadUnityWebFrames(paths) {
     const cacheKey = Array.isArray(paths) ? paths.join("|") : "";
     if (!cacheKey) {
@@ -603,22 +727,57 @@ async function loadUnityWebFrames(paths) {
         return unityWebFrames;
     }
 
-    const encodedPaths = encodeURIComponent(cacheKey);
-    const response = await fetch(`/api/unity/sequence?paths=${encodedPaths}&_ts=${Date.now()}`, {
-        headers: { Accept: "application/json" },
-    });
-    const contentType = response.headers.get("content-type") || "";
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status} while loading Unity frame sequence.`);
-    }
-    if (!contentType.includes("application/json")) {
-        throw new Error("Unity frame endpoint returned non-JSON content.");
+    const cachedFrames = buildUnityWebFramesFromClipCache(paths);
+    if (cachedFrames.length) {
+        unityWebFrames = cachedFrames;
+        unityWebCacheKey = cacheKey;
+        return unityWebFrames;
     }
 
-    const data = await response.json();
-    unityWebFrames = Array.isArray(data.frames) ? data.frames : [];
+    const missingPaths = [...new Set(paths.filter((path) => !unityWebClipFrameCache.has(path)))];
+    if (missingPaths.length) {
+        await Promise.all(missingPaths.map((path) => fetchUnityWebSequenceFrames([path])));
+    }
+
+    unityWebFrames = buildUnityWebFramesFromClipCache(paths);
+    if (!unityWebFrames.length) {
+        unityWebFrames = await fetchUnityWebSequenceFrames(paths);
+    }
     unityWebCacheKey = cacheKey;
     return unityWebFrames;
+}
+
+async function warmUnityWebFrames(paths) {
+    const uniquePaths = [...new Set((Array.isArray(paths) ? paths : []).filter(Boolean))];
+    if (!uniquePaths.length) {
+        return [];
+    }
+
+    const missingPaths = uniquePaths.filter((path) => !unityWebClipFrameCache.has(path));
+    if (!missingPaths.length) {
+        return buildUnityWebFramesFromClipCache(uniquePaths);
+    }
+
+    try {
+        await Promise.all(missingPaths.map((path) => fetchUnityWebSequenceFrames([path])));
+        return buildUnityWebFramesFromClipCache(uniquePaths);
+    } catch (error) {
+        return [];
+    }
+}
+
+function primeUnityWebRuntimeInBackground() {
+    return ensureUnityWebRuntime().catch(() => null);
+}
+
+function primeUnityWebExperienceInBackground() {
+    if (unityWebBackgroundWarmStarted) {
+        return;
+    }
+
+    unityWebBackgroundWarmStarted = true;
+    void primeUnityWebRuntimeInBackground();
+    void warmUnityWebFrames(unityStarterWarmPaths);
 }
 
 function sendUnityWebMessage(methodName, payload) {
@@ -1898,6 +2057,7 @@ function renderSequenceUnits(units) {
         } else {
             setUnityWebStatus(unityWebBuildStatus?.message || "Unity WebGL build is not available yet.");
         }
+        void warmUnityWebFrames(unityWebPaths);
     } else {
         stopUnityWebPlayback("No mapped clips available for the Unity 3D scene.");
     }
@@ -2367,6 +2527,9 @@ if (isOverlayDisplayMode) {
 if (isUnityDisplayMode) {
     setUnityWebStatus("Unity display mode ready. Waiting for controller trigger...");
     resetUnityWebTokenPanel("Waiting for controller trigger.", false);
+    window.setTimeout(() => {
+        primeUnityWebExperienceInBackground();
+    }, 50);
 }
 
 void loadUnityWebBuildStatus().then((status) => {
@@ -2374,6 +2537,9 @@ void loadUnityWebBuildStatus().then((status) => {
         setUnityWebStatus(status.message || "Unity WebGL build is not available yet.");
     } else if (!unityWebPaths.length) {
         setUnityWebStatus("Unity WebGL scene is ready. Process input to load a sign sequence.");
+    }
+    if (status.available && isUnityDisplayMode) {
+        primeUnityWebExperienceInBackground();
     }
 }).catch((error) => {
     setUnityWebStatus(`Unable to inspect Unity WebGL build: ${error.message}`);
