@@ -1611,6 +1611,7 @@ body.display-mode #inputUnitsPanel,
 body.display-mode #sequencePanel,
 body.display-mode #skeletonPanel,
 body.display-mode #advancedVisualsPanel,
+body.display-mode #unityDesktopPanel,
 body.display-mode #gesture3DPanel,
 body.display-mode #signAvatarPanel,
 body.display-mode .friendly-footer {
@@ -1624,7 +1625,7 @@ body.display-mode .page {
     padding: 12px;
 }
 
-body.display-mode #overlayPanel {
+body.overlay-display-mode #overlayPanel {
     min-height: calc(100vh - 24px);
     padding: 10px;
     background: transparent;
@@ -1633,23 +1634,83 @@ body.display-mode #overlayPanel {
     backdrop-filter: none;
 }
 
-body.display-mode #overlayPanel::before,
-body.display-mode #overlayPanel .section-head,
-body.display-mode #overlayStatus {
+body.overlay-display-mode #overlayPanel::before,
+body.overlay-display-mode #overlayPanel .section-head,
+body.overlay-display-mode #overlayStatus {
     display: none;
 }
 
-body.display-mode #overlayPanel .overlay-split {
+body.overlay-display-mode #overlayPanel .overlay-split {
     min-height: calc(100vh - 24px);
     grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
     gap: 18px;
 }
 
-body.display-mode #overlayPanel .overlay-stage,
-body.display-mode #overlayPanel .overlay-token-stage,
-body.display-mode #overlayPanel .overlay-stream,
-body.display-mode #overlayPanel .overlay-token-card {
+body.overlay-display-mode #overlayPanel .overlay-stage,
+body.overlay-display-mode #overlayPanel .overlay-token-stage,
+body.overlay-display-mode #overlayPanel .overlay-stream,
+body.overlay-display-mode #overlayPanel .overlay-token-card {
     min-height: calc(100vh - 24px);
+}
+
+body.unity-display-mode #overlayPanel {
+    display: none !important;
+}
+
+body.unity-display-mode #unityWebPanel {
+    min-height: calc(100vh - 24px);
+    padding: 10px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+body.unity-display-mode #unityWebPanel::before,
+body.unity-display-mode #unityWebPanel .section-head,
+body.unity-display-mode #unityWebStatus {
+    display: none;
+}
+
+body.unity-display-mode #unityWebPanel .unity-webgl-split {
+    min-height: calc(100vh - 24px);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 14px;
+}
+
+body.unity-display-mode #unityWebPanel .unity-webgl-stage {
+    min-height: calc(100vh - 244px);
+}
+
+body.unity-display-mode #unityWebPanel .unity-webgl-canvas {
+    height: calc(100vh - 244px);
+}
+
+body.unity-display-mode #unityWebPanel .unity-webgl-token-stage {
+    min-height: 170px;
+}
+
+body.unity-display-mode #unityWebPanel .unity-webgl-token-card {
+    grid-template-columns: minmax(120px, 170px) minmax(220px, 320px) minmax(0, 1fr);
+    grid-template-areas:
+        "label display meta"
+        "timeline timeline timeline";
+    justify-items: stretch;
+    text-align: left;
+}
+
+body.unity-display-mode #unityWebPanel .unity-webgl-token-label {
+    justify-self: center;
+    align-self: center;
+}
+
+body.unity-display-mode #unityWebPanel .unity-webgl-token-display {
+    justify-self: center;
+}
+
+body.unity-display-mode #unityWebPanel .unity-webgl-token-meta {
+    text-align: left;
 }
 
 @keyframes reveal {
@@ -1872,20 +1933,20 @@ body.display-mode #overlayPanel .overlay-token-card {
         height: 300px;
     }
 
-    body.display-mode #overlayPanel {
+    body.overlay-display-mode #overlayPanel {
         padding: 6px;
     }
 
-    body.display-mode #overlayPanel .overlay-split {
+    body.overlay-display-mode #overlayPanel .overlay-split {
         min-height: calc(100vh - 12px);
         grid-template-columns: minmax(0, 1.15fr) minmax(190px, 0.85fr);
         gap: 10px;
     }
 
-    body.display-mode #overlayPanel .overlay-stage,
-    body.display-mode #overlayPanel .overlay-token-stage,
-    body.display-mode #overlayPanel .overlay-stream,
-    body.display-mode #overlayPanel .overlay-token-card {
+    body.overlay-display-mode #overlayPanel .overlay-stage,
+    body.overlay-display-mode #overlayPanel .overlay-token-stage,
+    body.overlay-display-mode #overlayPanel .overlay-stream,
+    body.overlay-display-mode #overlayPanel .overlay-token-card {
         min-height: calc(100vh - 12px);
     }
 }

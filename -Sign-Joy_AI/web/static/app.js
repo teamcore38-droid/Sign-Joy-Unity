@@ -18,6 +18,7 @@ const playSequenceBtn = document.getElementById("playSequenceBtn");
 const playUnityDesktopBtn = document.getElementById("playUnityDesktopBtn");
 const stopUnityDesktopBtn = document.getElementById("stopUnityDesktopBtn");
 const unityDesktopStatusEl = document.getElementById("unityDesktopStatus");
+const openUnityDisplayBtn = document.getElementById("openUnityDisplayBtn");
 const playUnityWebBtn = document.getElementById("playUnityWebBtn");
 const stopUnityWebBtn = document.getElementById("stopUnityWebBtn");
 const unityWebStatusEl = document.getElementById("unityWebStatus");
@@ -68,14 +69,27 @@ const advancedVisualsToggleEl = document.getElementById("advancedVisualsToggle")
 const unitChipTemplate = document.getElementById("unitChipTemplate");
 const sequenceCardTemplate = document.getElementById("sequenceCardTemplate");
 const viewParams = new URLSearchParams(window.location.search);
+const requestedDisplayTarget = (
+    viewParams.get("target")
+    || viewParams.get("scene")
+    || viewParams.get("screen")
+    || ""
+).trim().toLowerCase();
 const isDisplayMode = (
-    viewParams.get("screen") === "display"
+    requestedDisplayTarget === "display"
+    || requestedDisplayTarget === "unity"
     || viewParams.get("mode") === "display"
     || viewParams.get("display") === "1"
 );
+const displayTarget = isDisplayMode
+    ? (requestedDisplayTarget === "unity" ? "unity" : "overlay")
+    : "controller";
+const isUnityDisplayMode = displayTarget === "unity";
+const isOverlayDisplayMode = displayTarget === "overlay";
 const presentationChannelName = "sign-math-overlay-sync";
 const presentationStorageKey = "sign-math-overlay-sync-event";
-const presentationStartLeadMs = 700;
+const presentationOverlayStartLeadMs = 700;
+const presentationUnityStartLeadMs = 2000;
 const presentationEventMaxAgeMs = 30000;
 const presentationServerPollMs = 200;
 const presentationTabId = window.crypto && typeof window.crypto.randomUUID === "function"
@@ -127,6 +141,7 @@ let unityWebBuildStatus = null;
 let unityWebRuntimePromise = null;
 let unityWebInstance = null;
 let unityWebScriptUrl = "";
+let unityDisplayWindowRef = null;
 
 const gesture3DLibReady = Boolean(window.GestureCharacter3D);
 const gesture3DModel = gesture3DLibReady
@@ -645,7 +660,67 @@ function stopUnityWebPlayback(
     setUnityWebStatus(statusMessage);
 }
 
-async function playUnityWebSequence(statusMessage = "Playing the embedded Unity 3D scene...", silentErrors = false) {
+async function startSynchronizedUnityWebPlayback({
+    scheduledStartAt = null,
+    preparingStatusMessage = "Preparing synchronized Unity 3D scene playback...",
+    waitingStatusMessage = "Waiting for synchronized Unity 3D scene start...",
+    playingStatusMessage = "Synchronized Unity 3D scene playback started.",
+    noUnityStatusMessage = "No mapped clips are available for the Unity 3D scene.",
+} = {}) {
+    if (!unityWebPaths.length) {
+        setUnityWebStatus(noUnityStatusMessage);
+        return false;
+    }
+
+    try {
+        const build = await loadUnityWebBuildStatus();
+        if (!build.available) {
+            setUnityWebStatus(build.message || "Unity WebGL build is not available yet.");
+            return false;
+        }
+
+        setUnityWebStatus(preparingStatusMessage);
+        if (unityWebTokenMetaEl) {
+            unityWebTokenMetaEl.textContent = "Loading the synchronized Unity 3D scene...";
+        }
+        const [instance, frames] = await Promise.all([
+            ensureUnityWebRuntime(),
+            loadUnityWebFrames(unityWebPaths),
+        ]);
+        if (!frames.length) {
+            throw new Error("No Unity-compatible landmark frames were returned.");
+        }
+        const requestedStartAt = Number(scheduledStartAt);
+        const startAt = Number.isFinite(requestedStartAt) ? requestedStartAt : Date.now();
+        const waitMs = Math.max(0, startAt - Date.now());
+
+        if (waitMs > 0) {
+            setUnityWebStatus(waitingStatusMessage);
+            if (unityWebTokenMetaEl) {
+                unityWebTokenMetaEl.textContent = waitingStatusMessage;
+            }
+            await sleep(waitMs);
+        }
+
+        void playUnityWebSequence(playingStatusMessage, true, {
+            preloadedInstance: instance,
+            preloadedFrames: frames,
+        });
+        return true;
+    } catch (error) {
+        setUnityWebStatus(`Unable to start synchronized Unity 3D playback: ${error.message}`);
+        return false;
+    }
+}
+
+async function playUnityWebSequence(
+    statusMessage = "Playing the embedded Unity 3D scene...",
+    silentErrors = false,
+    {
+        preloadedInstance = null,
+        preloadedFrames = null,
+    } = {},
+) {
     if (!unityWebPaths.length) {
         if (!silentErrors) setStatus("No mapped clips are available for the Unity 3D scene.", "error");
         return;
@@ -656,10 +731,10 @@ async function playUnityWebSequence(statusMessage = "Playing the embedded Unity 
     setUnityWebStatus(statusMessage);
 
     try {
-        const instance = await ensureUnityWebRuntime();
+        const instance = preloadedInstance || await ensureUnityWebRuntime();
         if (runId !== unityWebRun) return;
 
-        const frames = await loadUnityWebFrames(unityWebPaths);
+        const frames = Array.isArray(preloadedFrames) ? preloadedFrames : await loadUnityWebFrames(unityWebPaths);
         if (runId !== unityWebRun) return;
         if (!frames.length) {
             throw new Error("No Unity-compatible landmark frames were returned.");
@@ -1280,6 +1355,36 @@ function waitForOverlayFirstFrame(runId, timeoutMs = 3000) {
         overlayStreamEl.addEventListener("load", onLoad);
         overlayStreamEl.addEventListener("error", onError);
     });
+}
+
+function getUnityDisplayUrl() {
+    const url = new URL(window.location.href);
+    url.searchParams.set("display", "1");
+    url.searchParams.set("target", "unity");
+    url.hash = "unityWebPanel";
+    return url.toString();
+}
+
+function openUnityDisplayWindow() {
+    const nextWindow = window.open(
+        getUnityDisplayUrl(),
+        "signjoy-unity-display",
+        "popup=yes,width=1520,height=940,resizable=yes,scrollbars=yes",
+    );
+
+    if (!nextWindow) {
+        setUnityWebStatus("Popup blocked. Allow popups to open the synchronized Unity display screen.");
+        return null;
+    }
+
+    unityDisplayWindowRef = nextWindow;
+    try {
+        nextWindow.focus();
+    } catch (error) {
+        // Focus is best-effort only.
+    }
+    setUnityWebStatus("Unity display screen opened. It will sync automatically when you make signs.");
+    return nextWindow;
 }
 
 async function fetchOverlayProgress(sessionId) {
@@ -1903,9 +2008,37 @@ async function renderPipelineAndStartOverlay(
 async function handlePresentationEvent(message) {
     if (!message || typeof message !== "object") return;
     if (message.senderId === presentationTabId) return;
+    if (!isDisplayMode) return;
     if (markPresentationEventHandled(message.eventId)) return;
 
-    if (message.type === "start-overlay-playback" && message.payload?.data) {
+    if (message.type === "start-learning-playback" && message.payload?.data) {
+        const controllerText = typeof message.payload.text === "string"
+            ? message.payload.text.trim()
+            : "";
+        if (controllerText) textInput.value = controllerText;
+
+        if (isUnityDisplayMode) {
+            renderPipeline(message.payload.data);
+            await startSynchronizedUnityWebPlayback({
+                scheduledStartAt: message.payload.unityStartAt,
+                preparingStatusMessage: "Preparing synchronized Unity 3D scene from the controller tab...",
+                waitingStatusMessage: "Waiting for the controller tab to start the Unity 3D scene...",
+                playingStatusMessage: "Presentation Unity 3D scene playback started from the controller tab.",
+                noUnityStatusMessage: "Presentation updated, but no mapped clips are available for the Unity 3D scene.",
+            });
+            return;
+        }
+
+        await renderPipelineAndStartOverlay(message.payload.data, {
+            scheduledStartAt: message.payload.overlayStartAt,
+            overlayStatusMessage: "Presentation overlay playback started from the controller tab.",
+            successStatusMessage: "Presentation display updated from controller tab.",
+            noOverlayStatusMessage: "Presentation updated, but no mapped overlay clips are available for the 2D overlay.",
+        });
+        return;
+    }
+
+    if (message.type === "start-overlay-playback" && message.payload?.data && isOverlayDisplayMode) {
         const controllerText = typeof message.payload.text === "string"
             ? message.payload.text.trim()
             : "";
@@ -1920,8 +2053,16 @@ async function handlePresentationEvent(message) {
         return;
     }
 
-    if (message.type === "stop-overlay-playback") {
+    if (message.type === "stop-overlay-playback" && isOverlayDisplayMode) {
         stopOverlayStream("Presentation overlay stopped from the controller tab.");
+        return;
+    }
+
+    if (message.type === "stop-unity-web-playback" && isUnityDisplayMode) {
+        stopUnityWebPlayback(
+            "Presentation Unity 3D scene stopped from the controller tab.",
+            "Waiting for the controller tab to start another Unity sequence.",
+        );
     }
 }
 
@@ -1942,19 +2083,28 @@ async function processInput() {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Request failed.");
-        const startAt = Date.now() + presentationStartLeadMs;
-        const presentationMessage = broadcastPresentationEvent("start-overlay-playback", {
+        const overlayStartAt = Date.now() + presentationOverlayStartLeadMs;
+        const unityStartAt = Date.now() + presentationUnityStartLeadMs;
+        const presentationMessage = broadcastPresentationEvent("start-learning-playback", {
             data,
             text,
-            startAt,
+            overlayStartAt,
+            unityStartAt,
         });
         await publishPresentationEventToServer(presentationMessage);
-        setStatus("Preparing synchronized overlay playback...", "info");
+        setStatus("Preparing synchronized learning playback...", "info");
         await renderPipelineAndStartOverlay(data, {
-            scheduledStartAt: startAt,
+            scheduledStartAt: overlayStartAt,
             overlayStatusMessage: "Real-time 2D overlay playback started automatically.",
             successStatusMessage: "Pipeline completed and 2D overlay playback started automatically.",
             noOverlayStatusMessage: "Pipeline completed, but no mapped overlay clips are available for the 2D overlay.",
+        });
+        void startSynchronizedUnityWebPlayback({
+            scheduledStartAt: unityStartAt,
+            preparingStatusMessage: "Preparing synchronized Unity 3D scene playback...",
+            waitingStatusMessage: "Waiting for synchronized Unity 3D scene start...",
+            playingStatusMessage: "Unity 3D scene playback started automatically.",
+            noUnityStatusMessage: "Pipeline completed, but no mapped clips are available for the Unity 3D scene.",
         });
     } catch (error) {
         setStatus(`Error: ${error.message}`, "error");
@@ -2078,11 +2228,18 @@ playUnityDesktopBtn.addEventListener("click", () => {
 stopUnityDesktopBtn.addEventListener("click", () => {
     void stopUnityDesktopPlayback("Unity desktop playback stopped.");
 });
+if (openUnityDisplayBtn) {
+    openUnityDisplayBtn.addEventListener("click", () => {
+        openUnityDisplayWindow();
+    });
+}
 playUnityWebBtn.addEventListener("click", () => {
     void playUnityWebSequence();
 });
 stopUnityWebBtn.addEventListener("click", () => {
     stopUnityWebPlayback("Unity 3D scene playback stopped.");
+    const message = broadcastPresentationEvent("stop-unity-web-playback");
+    void publishPresentationEventToServer(message);
 });
 playSkeletonBtn.addEventListener("click", () => {
     if (!skeletonPaths.length) {
@@ -2179,6 +2336,8 @@ if (isDisplayMode) {
 }
 
 document.body.classList.toggle("display-mode", isDisplayMode);
+document.body.classList.toggle("overlay-display-mode", isOverlayDisplayMode);
+document.body.classList.toggle("unity-display-mode", isUnityDisplayMode);
 
 setSkeletonStatus("Process input to stream the full-body MediaPipe landmark instructor view.");
 setUnityDesktopStatus("Process input to send the mapped sign sequence to the Unity desktop avatar over UDP.");
@@ -2200,9 +2359,14 @@ if (signAvatarTextEl) {
 }
 setSignAvatarGroundTruthSource("");
 
-if (isDisplayMode) {
+if (isOverlayDisplayMode) {
     setOverlayStatus("Display mode ready. Waiting for controller trigger...");
     resetOverlayTokenPanel("Waiting for controller trigger.");
+}
+
+if (isUnityDisplayMode) {
+    setUnityWebStatus("Unity display mode ready. Waiting for controller trigger...");
+    resetUnityWebTokenPanel("Waiting for controller trigger.", false);
 }
 
 void loadUnityWebBuildStatus().then((status) => {
