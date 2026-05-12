@@ -1077,6 +1077,7 @@ a:focus {
 .skeleton-stage,
 .overlay-stage,
 .gesture3d-stage,
+.unity-webgl-stage,
 .sign-avatar-ground-truth-stage,
 .avatar-stage {
     position: relative;
@@ -1087,19 +1088,22 @@ a:focus {
 }
 
 .avatar-stage,
-.gesture3d-stage {
+.gesture3d-stage,
+.unity-webgl-stage {
     min-height: 380px;
 }
 
 .avatar-canvas,
-.gesture3d-canvas {
+.gesture3d-canvas,
+.unity-webgl-canvas {
     display: block;
     width: 100%;
     height: 380px;
 }
 
 .avatar-stage,
-.gesture3d-stage {
+.gesture3d-stage,
+.unity-webgl-stage {
     background:
         radial-gradient(circle at 18% 18%, rgba(121, 200, 255, 0.28), transparent 40%),
         radial-gradient(circle at 82% 78%, rgba(255, 224, 239, 0.26), transparent 44%),
@@ -1107,14 +1111,16 @@ a:focus {
 }
 
 .avatar-canvas,
-.gesture3d-canvas {
+.gesture3d-canvas,
+.unity-webgl-canvas {
     background:
         radial-gradient(circle at 50% 86%, rgba(255, 255, 255, 0.1), transparent 42%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.11));
 }
 
 .avatar-fallback,
-.gesture3d-fallback {
+.gesture3d-fallback,
+.unity-webgl-fallback {
     position: absolute;
     inset: 0;
     display: grid;
@@ -1128,8 +1134,60 @@ a:focus {
 }
 
 .avatar-fallback[hidden],
-.gesture3d-fallback[hidden] {
+.gesture3d-fallback[hidden],
+.unity-webgl-fallback[hidden] {
     display: none !important;
+}
+
+.unity-webgl-stage.is-ready .unity-webgl-fallback {
+    display: none;
+}
+
+.unity-webgl-loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(7, 16, 28, 0.62);
+    backdrop-filter: blur(6px);
+}
+
+.unity-webgl-loading[hidden] {
+    display: none !important;
+}
+
+.unity-webgl-loading-card {
+    min-width: min(100%, 320px);
+    padding: 18px 20px;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(10, 24, 42, 0.9);
+    box-shadow: var(--shadow-soft);
+}
+
+.unity-webgl-loading-label {
+    margin: 0 0 12px;
+    color: #f5f7fa;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.unity-webgl-progress-track {
+    width: 100%;
+    height: 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.unity-webgl-progress-bar {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--pink-strong), var(--peach-strong));
+    transition: width 120ms ease;
 }
 
 .skeleton-stage,

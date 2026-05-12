@@ -130,6 +130,39 @@
             </div>
         </section>
 
+        <section id="unityWebPanel" class="panel reveal">
+            <div class="section-head">
+                <h2>Unity 3D Scene</h2>
+                <div class="inline-actions">
+                    <button id="playUnityWebBtn" class="btn btn-secondary" disabled>Play 3D Scene</button>
+                    <button id="stopUnityWebBtn" class="btn btn-ghost" disabled>Stop 3D Scene</button>
+                </div>
+            </div>
+            <p id="unityWebStatus" class="meta-note">
+                Process input to prepare the embedded Unity WebGL scene below the 2D overlay.
+            </p>
+
+            <div id="unityWebStage" class="unity-webgl-stage">
+                <canvas id="unityWebCanvas" class="unity-webgl-canvas" aria-label="Embedded Unity WebGL scene"></canvas>
+                <div id="unityWebFallback" class="unity-webgl-fallback">
+                    Unity WebGL scene not loaded yet. Build the Unity WebGL export, then click play here.
+                </div>
+                <div id="unityWebLoading" class="unity-webgl-loading" hidden>
+                    <div class="unity-webgl-loading-card">
+                        <p id="unityWebLoadingLabel" class="unity-webgl-loading-label">Loading Unity scene...</p>
+                        <div class="unity-webgl-progress-track" aria-hidden="true">
+                            <div id="unityWebLoadingBar" class="unity-webgl-progress-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="avatar-current">
+                Current Token: <span id="unityWebCurrentToken">-</span>
+            </p>
+            <div id="unityWebTimeline" class="avatar-timeline"></div>
+        </section>
+
         <section id="sequencePanel" class="panel reveal">
             <div class="section-head">
                 <h2>See Your Sign Clips</h2>

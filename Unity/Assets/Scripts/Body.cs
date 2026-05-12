@@ -1,15 +1,14 @@
-using System;
 using UnityEngine;
 
 public class Body : MonoBehaviour
 {
     public class AvatarTree
     {
-        public Transform transf; // bone position
-        public AvatarTree child; // child bone
-        public AvatarTree parent; // parent bone
-        public int idx;  // bone index
-        public Quaternion quaternion; // initial roration
+        public Transform transf;
+        public AvatarTree child;
+        public AvatarTree parent;
+        public int idx;
+        public Quaternion quaternion;
 
         public AvatarTree(Transform tf, int idx, Quaternion quaternion, AvatarTree parent = null)
         {
@@ -19,10 +18,6 @@ public class Body : MonoBehaviour
             this.quaternion = quaternion;
         }
 
-        /// <summary>
-        /// bone direction
-        /// </summary>
-        /// <returns></returns>
         public Vector3 GetDir()
         {
             if (parent != null)
@@ -33,27 +28,27 @@ public class Body : MonoBehaviour
         }
     }
 
-    public Animator anim; // character controller
-    public Transform hip; // 髋部
-    public Transform spine; // 脊柱
-    public Transform thorax; // 胸部
-    public Transform neck; // 颈部
-    public Transform head; // 头部
-    public Transform nose; // 鼻子
-    public Transform lHip; // 左髋
-    public Transform lKnee; // 左膝
-    public Transform lFoot; // 左脚
-    public Transform rHip; // 右髋
-    public Transform rKnee; // 右膝
-    public Transform rFoot; // 右脚
-    public Transform lSld; // 左肩
-    public Transform lArm; // 左臂
-    public Transform lEblow; // 左肘
-    public Transform lWrist; // 左手腕
-    public Transform rSld; // 右肩
-    public Transform rArm; // 右臂
-    public Transform rEblow; // 右肘
-    public Transform rWrist; // 右手腕
+    public Animator anim;
+    public Transform hip;
+    public Transform spine;
+    public Transform thorax;
+    public Transform neck;
+    public Transform head;
+    public Transform nose;
+    public Transform lHip;
+    public Transform lKnee;
+    public Transform lFoot;
+    public Transform rHip;
+    public Transform rKnee;
+    public Transform rFoot;
+    public Transform lSld;
+    public Transform lArm;
+    public Transform lEblow;
+    public Transform lWrist;
+    public Transform rSld;
+    public Transform rArm;
+    public Transform rEblow;
+    public Transform rWrist;
 
     public AvatarTree Hip;
     public AvatarTree LHip;
@@ -76,7 +71,7 @@ public class Body : MonoBehaviour
     private AvatarTree LArm;
     private AvatarTree RArm;
 
-    public float[][] pose_data;  //body data
+    public float[][] pose_data;
     public float lerp;
 
     private void Start()
@@ -112,11 +107,11 @@ public class Body : MonoBehaviour
 
     private void BulidTree()
     {
-        Hip = new AvatarTree(hip, -1, hip.rotation); // -1
-        Spine = Hip.child = new AvatarTree(spine, -2, spine.rotation, Hip); // -2
-        Thorax = Spine.child = new AvatarTree(thorax, -3, thorax.rotation, Spine); // -3
-        Neck = Thorax.child = new AvatarTree(neck, -4, neck.rotation, Thorax); // -4
-        Head = Neck.child = new AvatarTree(head, -5, head.rotation, Neck); // -5
+        Hip = new AvatarTree(hip, -1, hip.rotation);
+        Spine = Hip.child = new AvatarTree(spine, -2, spine.rotation, Hip);
+        Thorax = Spine.child = new AvatarTree(thorax, -3, thorax.rotation, Spine);
+        Neck = Thorax.child = new AvatarTree(neck, -4, neck.rotation, Thorax);
+        Head = Neck.child = new AvatarTree(head, -5, head.rotation, Neck);
         Nose = Head.child = new AvatarTree(nose, 0, nose.rotation, Head);
         LHip = new AvatarTree(lHip, 23, lHip.rotation);
         LKnee = LHip.child = new AvatarTree(lKnee, 25, lKnee.rotation, LHip);
@@ -124,35 +119,19 @@ public class Body : MonoBehaviour
         RHip = new AvatarTree(rHip, 24, rHip.rotation);
         RKnee = RHip.child = new AvatarTree(rKnee, 26, rHip.rotation, RHip);
         RFoot = RKnee.child = new AvatarTree(rFoot, 30, rFoot.rotation, RKnee);
-        LSld = new AvatarTree(lSld, -6, lSld.rotation); // -6
+        LSld = new AvatarTree(lSld, -6, lSld.rotation);
         LArm = LSld.child = new AvatarTree(lArm, 11, lArm.rotation, LSld);
         LEblow = LArm.child = new AvatarTree(lEblow, 13, lEblow.rotation, LArm);
         LWrist = LEblow.child = new AvatarTree(lWrist, 15, lWrist.rotation, LEblow);
-        RSld = new AvatarTree(rSld, -7, rSld.rotation); // -7
+        RSld = new AvatarTree(rSld, -7, rSld.rotation);
         RArm = RSld.child = new AvatarTree(rArm, 12, rArm.rotation, RSld);
         REblow = RArm.child = new AvatarTree(rEblow, 14, rEblow.rotation, RArm);
         RWrist = REblow.child = new AvatarTree(rWrist, 16, rWrist.rotation, REblow);
-    }//bone tree
+    }
 
-    // void Update()
-    // {
-    //     lerp += Time.deltaTime;
-    //     if (lerp >= 1.0f)
-    //     {
-    //         lerp = 0;
-    //     }
-    //     if (pose_data != null)
-    //     {
-    //         UpdateTree(Hip, lerp);
-    //         UpdateTree(RArm, lerp);
-    //         UpdateTree(LArm, lerp);
-    //         //UpdateTree(LHip, lerp);
-    //         //UpdateTree(RHip, lerp);
-    //     }
-    // }
     void Update()
     {
-        float rotationSpeed = 3.0f; // adjust rotation speed
+        float rotationSpeed = 3.0f;
         float t = rotationSpeed * Time.deltaTime;
 
         if (pose_data != null && pose_data.Length > 0)
@@ -160,15 +139,15 @@ public class Body : MonoBehaviour
             UpdateTree(Hip, t);
             UpdateTree(RArm, t);
             UpdateTree(LArm, t);
-            // UpdateTree(LHip, t);
-            // UpdateTree(RHip, t);
         }
     }
 
     private Vector3 GetData(int idx)
     {
-        float x, y, z;
-        
+        float x;
+        float y;
+        float z;
+
         if (idx == -1)
         {
             x = (pose_data[23][0] + pose_data[24][0]) / 2;
@@ -225,34 +204,51 @@ public class Body : MonoBehaviour
                 x = y = z = 0;
             }
         }
-        return new Vector3(-x, y, -z);
-        //return new Vector3(-x, y, z);
-        //return new Vector3(x, y, -z);
-        //return new Vector3(x, y, z);
 
+        return new Vector3(-x, y, -z);
     }
 
-    private void UpdateTree(AvatarTree tree, float lerp)
+    private void UpdateTree(AvatarTree tree, float blend)
     {
         if (tree.parent != null)
         {
-            UpdateBone(tree, lerp);
+            UpdateBone(tree, blend);
         }
         if (tree.child != null)
         {
-            UpdateTree(tree.child, lerp);
+            UpdateTree(tree.child, blend);
         }
     }
 
-    private void UpdateBone(AvatarTree tree, float lerp)
+    private void UpdateBone(AvatarTree tree, float blend)
     {
-        var dir1 = tree.GetDir();
-        var dir2 = GetData(tree.parent.idx) - GetData(tree.idx);
+        Vector3 dir1 = tree.GetDir();
+        Vector3 dir2 = GetData(tree.parent.idx) - GetData(tree.idx);
         Quaternion rot = Quaternion.FromToRotation(dir1, dir2);
         Quaternion rot1 = tree.parent.transf.rotation;
-        tree.parent.transf.rotation = Quaternion.Lerp(rot1, rot * rot1, lerp);
-    }//bone rotation
+        tree.parent.transf.rotation = Quaternion.Lerp(rot1, rot * rot1, blend);
+    }
+
+    public void ResetPose()
+    {
+        ResetTree(Hip);
+        ResetTree(LHip);
+        ResetTree(RHip);
+        ResetTree(LSld);
+        ResetTree(RSld);
+    }
+
+    private void ResetTree(AvatarTree tree)
+    {
+        if (tree == null || tree.transf == null)
+        {
+            return;
+        }
+
+        tree.transf.rotation = tree.quaternion;
+        if (tree.child != null)
+        {
+            ResetTree(tree.child);
+        }
+    }
 }
-
-
-

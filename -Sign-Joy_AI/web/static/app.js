@@ -18,6 +18,17 @@ const playSequenceBtn = document.getElementById("playSequenceBtn");
 const playUnityDesktopBtn = document.getElementById("playUnityDesktopBtn");
 const stopUnityDesktopBtn = document.getElementById("stopUnityDesktopBtn");
 const unityDesktopStatusEl = document.getElementById("unityDesktopStatus");
+const playUnityWebBtn = document.getElementById("playUnityWebBtn");
+const stopUnityWebBtn = document.getElementById("stopUnityWebBtn");
+const unityWebStatusEl = document.getElementById("unityWebStatus");
+const unityWebStageEl = document.getElementById("unityWebStage");
+const unityWebCanvasEl = document.getElementById("unityWebCanvas");
+const unityWebFallbackEl = document.getElementById("unityWebFallback");
+const unityWebLoadingEl = document.getElementById("unityWebLoading");
+const unityWebLoadingLabelEl = document.getElementById("unityWebLoadingLabel");
+const unityWebLoadingBarEl = document.getElementById("unityWebLoadingBar");
+const unityWebCurrentTokenEl = document.getElementById("unityWebCurrentToken");
+const unityWebTimelineEl = document.getElementById("unityWebTimeline");
 
 const playSkeletonBtn = document.getElementById("playSkeletonBtn");
 const stopSkeletonBtn = document.getElementById("stopSkeletonBtn");
@@ -79,6 +90,7 @@ let sequenceUnitsData = [];
 let playbackRun = 0;
 let skeletonPaths = [];
 let unityDesktopPaths = [];
+let unityWebPaths = [];
 let overlayPaths = [];
 let overlayRun = 0;
 let overlaySessionId = "";
@@ -105,6 +117,15 @@ let presentationServerRevision = 0;
 let presentationPollInFlight = false;
 let advancedVisualsVisible = false;
 let unityDesktopStatusPollId = 0;
+let unityWebFrames = [];
+let unityWebCacheKey = "";
+let unityWebRun = 0;
+let unityWebTokenNodes = [];
+let unityWebTokenSequence = [];
+let unityWebBuildStatus = null;
+let unityWebRuntimePromise = null;
+let unityWebInstance = null;
+let unityWebScriptUrl = "";
 
 const gesture3DLibReady = Boolean(window.GestureCharacter3D);
 const gesture3DModel = gesture3DLibReady
@@ -197,6 +218,12 @@ function setSkeletonStatus(message) {
 function setUnityDesktopStatus(message) {
     if (unityDesktopStatusEl) {
         unityDesktopStatusEl.textContent = message;
+    }
+}
+
+function setUnityWebStatus(message) {
+    if (unityWebStatusEl) {
+        unityWebStatusEl.textContent = message;
     }
 }
 
@@ -342,6 +369,291 @@ async function stopUnityDesktopPlayback(statusMessage = "Unity desktop playback 
     setUnityDesktopStatus(statusMessage);
     playUnityDesktopBtn.disabled = unityDesktopPaths.length === 0;
     stopUnityDesktopBtn.disabled = true;
+}
+
+function setUnityWebLoading(visible, label = "Loading Unity scene...", progress = 0) {
+    if (unityWebLoadingEl) {
+        unityWebLoadingEl.hidden = !visible;
+    }
+    if (unityWebLoadingLabelEl) {
+        unityWebLoadingLabelEl.textContent = label;
+    }
+    if (unityWebLoadingBarEl) {
+        const normalized = Math.max(0, Math.min(1, Number(progress) || 0));
+        unityWebLoadingBarEl.style.width = `${Math.round(normalized * 100)}%`;
+    }
+}
+
+function setUnityWebFallback(message, visible = true) {
+    if (unityWebFallbackEl) {
+        unityWebFallbackEl.textContent = message;
+        unityWebFallbackEl.hidden = !visible;
+    }
+    if (unityWebStageEl) {
+        unityWebStageEl.classList.toggle("is-ready", !visible);
+    }
+}
+
+function syncUnityWebButtons(active = false) {
+    const ready = Boolean(unityWebBuildStatus && unityWebBuildStatus.available);
+    if (playUnityWebBtn) {
+        playUnityWebBtn.disabled = active || !ready || unityWebPaths.length === 0;
+    }
+    if (stopUnityWebBtn) {
+        stopUnityWebBtn.disabled = !active;
+    }
+}
+
+function renderUnityWebTimeline(tokens) {
+    if (!unityWebTimelineEl) return;
+
+    unityWebTimelineEl.innerHTML = "";
+    unityWebTokenNodes = [];
+    if (!tokens || !tokens.length) {
+        const chip = document.createElement("span");
+        chip.className = "avatar-token";
+        chip.textContent = "No sequence";
+        unityWebTimelineEl.appendChild(chip);
+        return;
+    }
+
+    tokens.forEach((token) => {
+        const chip = document.createElement("span");
+        chip.className = "avatar-token";
+        chip.textContent = token;
+        unityWebTimelineEl.appendChild(chip);
+        unityWebTokenNodes.push(chip);
+    });
+}
+
+function setUnityWebTimelineState(active = null) {
+    unityWebTokenNodes.forEach((node, idx) => {
+        node.classList.remove("active", "done");
+        if (active === null) return;
+        if (idx < active) node.classList.add("done");
+        if (idx === active) node.classList.add("active");
+    });
+}
+
+function setUnityWebTimelineDone() {
+    unityWebTokenNodes.forEach((node) => {
+        node.classList.remove("active");
+        node.classList.add("done");
+    });
+}
+
+async function loadUnityWebBuildStatus(forceRefresh = false) {
+    if (!forceRefresh && unityWebBuildStatus) {
+        return unityWebBuildStatus;
+    }
+
+    const response = await fetch(`/api/unity/webgl/status?_ts=${Date.now()}`, {
+        headers: { Accept: "application/json" },
+    });
+    const data = await response.json();
+    unityWebBuildStatus = data;
+
+    if (data.available) {
+        setUnityWebFallback("Unity WebGL scene ready.", Boolean(!unityWebInstance));
+    } else {
+        setUnityWebFallback(data.message || "Unity WebGL build is not available yet.", true);
+    }
+
+    syncUnityWebButtons(false);
+    return unityWebBuildStatus;
+}
+
+function loadUnityWebLoaderScript(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = src;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("Unable to load the Unity WebGL loader script."));
+        document.head.appendChild(script);
+    });
+}
+
+async function ensureUnityWebRuntime() {
+    if (unityWebInstance) {
+        return unityWebInstance;
+    }
+
+    if (unityWebRuntimePromise) {
+        return unityWebRuntimePromise;
+    }
+
+    unityWebRuntimePromise = (async () => {
+        const build = await loadUnityWebBuildStatus(true);
+        if (!build.available) {
+            throw new Error(build.message || "Unity WebGL build is not available.");
+        }
+
+        if (!window.createUnityInstance || unityWebScriptUrl !== build.loader_url) {
+            unityWebScriptUrl = build.loader_url;
+            await loadUnityWebLoaderScript(build.loader_url);
+        }
+
+        if (typeof window.createUnityInstance !== "function") {
+            throw new Error("Unity WebGL loader did not expose createUnityInstance.");
+        }
+
+        setUnityWebLoading(true, "Loading Unity scene...", 0);
+        const instance = await window.createUnityInstance(
+            unityWebCanvasEl,
+            {
+                dataUrl: build.data_url,
+                frameworkUrl: build.framework_url,
+                codeUrl: build.code_url,
+                streamingAssetsUrl: "/static/unity-webgl/StreamingAssets",
+                companyName: "TeamCore",
+                productName: "Sign Joy Unity",
+                productVersion: "1.0",
+            },
+            (progress) => {
+                const percent = Math.round((Number(progress) || 0) * 100);
+                setUnityWebLoading(true, `Loading Unity scene... ${percent}%`, progress);
+            },
+        );
+
+        unityWebInstance = instance;
+        setUnityWebLoading(false);
+        setUnityWebFallback("Unity WebGL scene ready.", false);
+        return instance;
+    })().catch((error) => {
+        unityWebRuntimePromise = null;
+        unityWebInstance = null;
+        setUnityWebLoading(false);
+        setUnityWebFallback(error.message || "Unable to start the Unity WebGL scene.", true);
+        throw error;
+    });
+
+    return unityWebRuntimePromise;
+}
+
+async function loadUnityWebFrames(paths) {
+    const cacheKey = Array.isArray(paths) ? paths.join("|") : "";
+    if (!cacheKey) {
+        return [];
+    }
+
+    if (cacheKey === unityWebCacheKey && unityWebFrames.length) {
+        return unityWebFrames;
+    }
+
+    const encodedPaths = encodeURIComponent(cacheKey);
+    const response = await fetch(`/api/unity/sequence?paths=${encodedPaths}&_ts=${Date.now()}`, {
+        headers: { Accept: "application/json" },
+    });
+    const contentType = response.headers.get("content-type") || "";
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status} while loading Unity frame sequence.`);
+    }
+    if (!contentType.includes("application/json")) {
+        throw new Error("Unity frame endpoint returned non-JSON content.");
+    }
+
+    const data = await response.json();
+    unityWebFrames = Array.isArray(data.frames) ? data.frames : [];
+    unityWebCacheKey = cacheKey;
+    return unityWebFrames;
+}
+
+function sendUnityWebMessage(methodName, payload) {
+    if (!unityWebInstance || typeof unityWebInstance.SendMessage !== "function") {
+        return;
+    }
+
+    if (payload === undefined) {
+        unityWebInstance.SendMessage("DataManager", methodName);
+        return;
+    }
+
+    unityWebInstance.SendMessage("DataManager", methodName, payload);
+}
+
+function clearUnityWebFrame() {
+    try {
+        sendUnityWebMessage("ClearFrame");
+    } catch (error) {
+        // Best effort reset. The next playback can still continue.
+    }
+}
+
+function stopUnityWebPlayback(statusMessage = "Unity WebGL playback stopped.") {
+    unityWebRun += 1;
+    clearUnityWebFrame();
+    setUnityWebTimelineState(null);
+    if (unityWebCurrentTokenEl) {
+        unityWebCurrentTokenEl.textContent = unityWebTokenSequence.length
+            ? unityWebTokenSequence[0]
+            : "-";
+    }
+    syncUnityWebButtons(false);
+    setUnityWebStatus(statusMessage);
+}
+
+async function playUnityWebSequence(statusMessage = "Playing the embedded Unity 3D scene...", silentErrors = false) {
+    if (!unityWebPaths.length) {
+        if (!silentErrors) setStatus("No mapped clips are available for the Unity 3D scene.", "error");
+        return;
+    }
+
+    const runId = ++unityWebRun;
+    syncUnityWebButtons(true);
+    setUnityWebStatus(statusMessage);
+
+    try {
+        const instance = await ensureUnityWebRuntime();
+        if (runId !== unityWebRun) return;
+
+        const frames = await loadUnityWebFrames(unityWebPaths);
+        if (runId !== unityWebRun) return;
+        if (!frames.length) {
+            throw new Error("No Unity-compatible landmark frames were returned.");
+        }
+
+        let activeSequenceIndex = null;
+        for (const frame of frames) {
+            if (runId !== unityWebRun) return;
+
+            const frameSequenceIndex = Number(frame.sequence_index);
+            if (
+                Number.isInteger(frameSequenceIndex)
+                && frameSequenceIndex >= 0
+                && frameSequenceIndex < unityWebTokenSequence.length
+                && frameSequenceIndex !== activeSequenceIndex
+            ) {
+                activeSequenceIndex = frameSequenceIndex;
+                setUnityWebTimelineState(frameSequenceIndex);
+                if (unityWebCurrentTokenEl) {
+                    unityWebCurrentTokenEl.textContent = unityWebTokenSequence[frameSequenceIndex];
+                }
+            }
+
+            const payload = JSON.stringify({
+                left_hand: Array.isArray(frame.left_hand) ? frame.left_hand : [],
+                right_hand: Array.isArray(frame.right_hand) ? frame.right_hand : [],
+                pose: Array.isArray(frame.pose) ? frame.pose : [],
+            });
+            instance.SendMessage("DataManager", "ReceiveFrameJson", payload);
+
+            const delay = Number(frame.delay_ms);
+            await sleep(Number.isFinite(delay) ? Math.max(24, Math.min(delay, 220)) : 56);
+        }
+
+        if (runId !== unityWebRun) return;
+        clearUnityWebFrame();
+        setUnityWebTimelineDone();
+        setUnityWebStatus("Unity 3D scene playback completed.");
+    } catch (error) {
+        clearUnityWebFrame();
+        if (!silentErrors) setStatus(`Unity 3D scene error: ${error.message}`, "error");
+        setUnityWebStatus(`Unity 3D scene stopped: ${error.message}`);
+    } finally {
+        if (runId !== unityWebRun) return;
+        syncUnityWebButtons(false);
+    }
 }
 
 function setSignAvatarGroundTruthSource(videoUrl) {
@@ -1295,8 +1607,12 @@ function renderSequenceUnits(units) {
         sequenceUnitsEl.textContent = "No sequence generated.";
         playSequenceBtn.disabled = true;
         skeletonPaths = [];
+        unityWebPaths = [];
         overlayPaths = [];
         overlayTokenSequence = [];
+        unityWebFrames = [];
+        unityWebCacheKey = "";
+        unityWebTokenSequence = [];
         gesture3DPaths = [];
         gesture3DFrames = [];
         gesture3DCacheKey = "";
@@ -1312,6 +1628,7 @@ function renderSequenceUnits(units) {
         stopSkeletonBtn.disabled = true;
         playUnityDesktopBtn.disabled = true;
         stopUnityDesktopBtn.disabled = true;
+        syncUnityWebButtons(false);
         playOverlayBtn.disabled = true;
         stopOverlayBtn.disabled = true;
         playGesture3DBtn.disabled = true;
@@ -1325,6 +1642,9 @@ function renderSequenceUnits(units) {
         stopSignAvatarComparison("No sequence generated for SignAvatars-style comparison.");
         renderOverlayTokenTimeline([]);
         resetOverlayTokenPanel("No sequence generated for overlay token animation.");
+        renderUnityWebTimeline([]);
+        setUnityWebStatus("Process input to prepare the embedded Unity 3D scene.");
+        if (unityWebCurrentTokenEl) unityWebCurrentTokenEl.textContent = "-";
         if (gesture3DCurrentTokenEl) gesture3DCurrentTokenEl.textContent = "-";
         setSignAvatarCurrentToken("Current Token: -");
         renderGesture3DTimeline([]);
@@ -1367,8 +1687,12 @@ function renderSequenceUnits(units) {
         .map((entry) => entry.relativePath)
         .filter((path) => Boolean(path));
     unityDesktopPaths = [...skeletonPaths];
+    unityWebPaths = [...skeletonPaths];
     overlayPaths = [...skeletonPaths];
     overlayTokenSequence = mappedVideoEntries.map((entry) => entry.token);
+    unityWebFrames = [];
+    unityWebCacheKey = "";
+    unityWebTokenSequence = mappedVideoEntries.map((entry) => entry.token);
     gesture3DPaths = [...skeletonPaths];
     gesture3DFrames = [];
     gesture3DCacheKey = "";
@@ -1389,6 +1713,7 @@ function renderSequenceUnits(units) {
     stopSkeletonBtn.disabled = true;
     playUnityDesktopBtn.disabled = unityDesktopPaths.length === 0;
     stopUnityDesktopBtn.disabled = true;
+    syncUnityWebButtons(false);
     playOverlayBtn.disabled = overlayPaths.length === 0;
     stopOverlayBtn.disabled = true;
     playGesture3DBtn.disabled = !gesture3DModel.enabled || gesture3DPaths.length === 0;
@@ -1407,6 +1732,15 @@ function renderSequenceUnits(units) {
     } else {
         void stopUnityDesktopPlayback("No mapped clips available for Unity desktop playback.");
     }
+    if (unityWebPaths.length) {
+        if (unityWebBuildStatus?.available) {
+            setUnityWebStatus("Ready to play the mapped sign sequence in the embedded Unity 3D scene.");
+        } else {
+            setUnityWebStatus(unityWebBuildStatus?.message || "Unity WebGL build is not available yet.");
+        }
+    } else {
+        stopUnityWebPlayback("No mapped clips available for the Unity 3D scene.");
+    }
     if (overlayPaths.length) {
         stopOverlayStream("Ready to stream realistic 2D hand + upper-body overlay sequence.");
     } else {
@@ -1418,6 +1752,13 @@ function renderSequenceUnits(units) {
             ? "Ready to animate the current overlay token."
             : "No mapped tokens available for overlay animation.",
     );
+    renderUnityWebTimeline(unityWebTokenSequence);
+    setUnityWebTimelineState(null);
+    if (unityWebCurrentTokenEl) {
+        unityWebCurrentTokenEl.textContent = unityWebTokenSequence.length
+            ? unityWebTokenSequence[0]
+            : "-";
+    }
     if (gesture3DPaths.length) {
         stopGesture3DPlayback("Ready to stream 3D hand + character landmark sequence.");
     } else {
@@ -1582,6 +1923,9 @@ async function playSequence() {
     if (overlayPaths.length) {
         overlayStreamRunId = startOverlayStream(overlayPaths, "Synchronized realistic hand + upper-body overlay stream started.");
     }
+    if (unityWebPaths.length) {
+        void playUnityWebSequence("Synchronized Unity 3D scene playback started.", true);
+    }
     if (gesture3DPaths.length) {
         playGesture3DSequence("Synchronized 3D hand + character playback started.", true);
     }
@@ -1619,6 +1963,10 @@ async function playSequence() {
             playOverlayBtn.disabled = false;
             stopOverlayBtn.disabled = true;
         }
+        if (unityWebPaths.length) {
+            setUnityWebStatus("Unity 3D scene playback completed.");
+            syncUnityWebButtons(false);
+        }
         if (gesture3DPaths.length) {
             setGesture3DStatus("3D hand + character playback completed.");
             playGesture3DBtn.disabled = !gesture3DModel.enabled || gesture3DPaths.length === 0;
@@ -1628,6 +1976,7 @@ async function playSequence() {
         setStatus(`Playback error: ${error.message}`, "error");
         if (skeletonPaths.length) stopSkeletonStream(`Cartoon instructor stream stopped: ${error.message}`);
         if (overlayPaths.length) stopOverlayStream(`Realistic hand overlay stream stopped: ${error.message}`);
+        if (unityWebPaths.length) stopUnityWebPlayback(`Unity 3D scene stopped: ${error.message}`);
         if (gesture3DPaths.length) stopGesture3DPlayback(`3D hand + character playback stopped: ${error.message}`);
     } finally {
         playSequenceBtn.disabled = mappedVideoEntries.length === 0;
@@ -1673,6 +2022,12 @@ playUnityDesktopBtn.addEventListener("click", () => {
 });
 stopUnityDesktopBtn.addEventListener("click", () => {
     void stopUnityDesktopPlayback("Unity desktop playback stopped.");
+});
+playUnityWebBtn.addEventListener("click", () => {
+    void playUnityWebSequence();
+});
+stopUnityWebBtn.addEventListener("click", () => {
+    stopUnityWebPlayback("Unity 3D scene playback stopped.");
 });
 playSkeletonBtn.addEventListener("click", () => {
     if (!skeletonPaths.length) {
@@ -1772,9 +2127,11 @@ document.body.classList.toggle("display-mode", isDisplayMode);
 
 setSkeletonStatus("Process input to stream the full-body MediaPipe landmark instructor view.");
 setUnityDesktopStatus("Process input to send the mapped sign sequence to the Unity desktop avatar over UDP.");
+setUnityWebStatus("Checking Unity WebGL build status...");
 setOverlayStatus("Process input to stream the realistic OpenCV full-body + face overlay.");
 renderOverlayTokenTimeline([]);
 resetOverlayTokenPanel("Process input to animate the current token here.");
+renderUnityWebTimeline([]);
 setAdvancedVisualsVisible(false);
 setGesture3DStatus(gesture3DModel.enabled
     ? "Process input to animate the 3D character using hand + pose + face landmarks."
@@ -1791,5 +2148,16 @@ if (isDisplayMode) {
     setOverlayStatus("Display mode ready. Waiting for controller trigger...");
     resetOverlayTokenPanel("Waiting for controller trigger.");
 }
+
+void loadUnityWebBuildStatus().then((status) => {
+    if (!status.available) {
+        setUnityWebStatus(status.message || "Unity WebGL build is not available yet.");
+    } else if (!unityWebPaths.length) {
+        setUnityWebStatus("Unity WebGL scene is ready. Process input to load a sign sequence.");
+    }
+}).catch((error) => {
+    setUnityWebStatus(`Unable to inspect Unity WebGL build: ${error.message}`);
+    setUnityWebFallback(`Unable to inspect Unity WebGL build: ${error.message}`, true);
+});
 
 setupSpeechRecognition();

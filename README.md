@@ -7,7 +7,9 @@ This repository combines two related projects:
 1. `Unity/` + `Python/`
    Real-time webcam pose tracking with MediaPipe, sending landmarks to a Unity avatar over UDP.
 2. `-Sign-Joy_AI/`
-   A Flask web app that accepts text or voice input, maps tokens to sign-language dataset clips, generates MediaPipe landmark sequences from those clips, and can now stream those sequences to the Unity desktop avatar over UDP.
+   A Flask web app that accepts text or voice input, maps tokens to sign-language dataset clips, generates MediaPipe landmark sequences from those clips, and can now drive:
+   - an embedded Unity WebGL scene in the browser
+   - the Unity desktop avatar over UDP
 
 The desktop integration target is:
 
@@ -18,7 +20,7 @@ The desktop integration target is:
 
 - `Unity/` - Unity 2021.3 project with the avatar and UDP receiver
 - `Python/` - original live webcam-to-Unity MediaPipe bridge
-- `-Sign-Joy_AI/` - SignJoy AI web app with text/voice input, dataset playback, 2D overlays, 3D browser visualizations, and Unity desktop bridge
+- `-Sign-Joy_AI/` - SignJoy AI web app with text/voice input, dataset playback, 2D overlays, 3D browser visualizations, embedded Unity WebGL playback, and Unity desktop bridge
 
 ## Recommended versions
 
@@ -48,6 +50,10 @@ This runs the old MediaPipe webcam script from `Python/` and animates the Unity 
 This runs the Flask web app from `-Sign-Joy_AI/`, lets the user enter text or voice, maps that input to dataset videos, extracts landmarks from those sign clips, and sends them to the Unity avatar.
 
 This is the main integrated workflow added in this repo.
+
+### Mode C: SignJoy AI to embedded Unity WebGL scene
+
+This uses the same SignJoy AI pipeline, but plays the mapped landmark sequence inside an embedded Unity WebGL scene shown directly on the `/learn` page under the 2D overlay section.
 
 ## First-time setup on another laptop
 
@@ -81,6 +87,22 @@ Or download the ZIP from GitHub and extract it.
 5. Open `Assets > Scenes > SampleScene`
 
 The Unity avatar receiver is already configured to listen on UDP port `5054`.
+
+### 4. Build the Unity WebGL export once
+
+This step is required only if you want the Unity 3D scene to appear inside the SignJoy AI browser page.
+
+1. Open the `Unity/` project
+2. Wait for Unity to finish importing and compiling scripts
+3. Open `SampleScene`
+4. Click `Build > Build SignJoy WebGL`
+5. Wait for the export to finish
+
+The WebGL build is written into:
+
+```text
+-Sign-Joy_AI/web/static/unity-webgl/
+```
 
 ## Run the integrated SignJoy AI + Unity flow
 
@@ -128,9 +150,13 @@ http://127.0.0.1:5001/learn
 2. Or click `Use My Voice`
 3. Click `Make My Signs`
 4. Wait for the mapped sequence to appear
-5. Click `Play in Unity`
+5. Click `Play 3D Scene` to play the embedded Unity scene in the browser
+6. Optionally click `Play in Unity` to also stream the same sequence to the separate Unity desktop app
 
-The mapped sign sequence will now be replayed into the Unity desktop avatar over UDP.
+The mapped sign sequence can now be replayed:
+
+- inside the browser in the embedded Unity WebGL scene
+- inside the standalone Unity desktop avatar over UDP
 
 ## Run the original webcam-to-Unity flow
 
@@ -214,6 +240,7 @@ For Unity C# editing:
 - `Unity/Assets/Scripts/DataManager.cs`
 - `Unity/Assets/Scripts/Body.cs`
 - `Unity/Assets/Scripts/Hand.cs`
+- `Unity/Assets/Editor/SignJoyWebGLBuild.cs`
 - `Unity/Assets/Scenes/SampleScene.unity`
 
 ### Original live-tracking side
@@ -259,6 +286,15 @@ That usually means:
 - no landmarks are being produced for the mapped clips, or
 - the local bridge is not running in the SignJoy backend
 
+### Embedded Unity 3D scene does not appear on `/learn`
+
+Check:
+
+- you ran `Build > Build SignJoy WebGL` in the Unity project
+- the folder `-Sign-Joy_AI/web/static/unity-webgl/Build/` exists
+- you hard-refreshed the browser after rebuilding
+- the `Unity 3D Scene` status line does not say the build is missing
+
 ### PowerShell activation blocked
 
 Run:
@@ -295,7 +331,9 @@ python web_app.py
 Then:
 
 1. Open the Unity project from `Unity/`
-2. Press Play in `SampleScene`
-3. Open `http://127.0.0.1:5001/learn`
-4. Click `Make My Signs`
-5. Click `Play in Unity`
+2. Run `Build > Build SignJoy WebGL` once
+3. Press Play in `SampleScene` if you also want the desktop Unity app
+4. Open `http://127.0.0.1:5001/learn`
+5. Click `Make My Signs`
+6. Click `Play 3D Scene` for the embedded browser Unity scene
+7. Optionally click `Play in Unity` for the desktop Unity scene

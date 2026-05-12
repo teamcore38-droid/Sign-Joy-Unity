@@ -24,9 +24,6 @@ public class Hand : MonoBehaviour
             }
         }
 
-        /// <summary>
-        /// </summary>
-        /// <returns></returns>
         public Vector3 GetDir()
         {
             if (parent != null)
@@ -81,7 +78,6 @@ public class Hand : MonoBehaviour
     public Transform r_pinky3;
     public Transform r_pinky4;
 
-    // bone tree
     public AvatarTree L_Wrist;
     private AvatarTree L_Thumb1;
     private AvatarTree L_Thumb2;
@@ -137,8 +133,7 @@ public class Hand : MonoBehaviour
 
     private void BulidTree()
     {
-        // left hand bone tree
-        L_Wrist = new AvatarTree(l_wrist, 5, 0, l_wrist.rotation); // left wrist
+        L_Wrist = new AvatarTree(l_wrist, 5, 0, l_wrist.rotation);
         L_Thumb1 = L_Wrist.childs[0] = new AvatarTree(l_thumb1, 1, 1, l_thumb1.rotation, L_Wrist);
         L_Index1 = L_Wrist.childs[1] = new AvatarTree(l_index1, 1, 5, l_index1.rotation, L_Wrist);
         L_Middle1 = L_Wrist.childs[2] = new AvatarTree(l_middle1, 1, 9, l_middle1.rotation, L_Wrist);
@@ -165,8 +160,7 @@ public class Hand : MonoBehaviour
         L_Pinky3 = L_Pinky2.childs[0] = new AvatarTree(l_pinky3, 1, 19, l_pinky3.rotation, L_Pinky2);
         L_Pinky4 = L_Pinky3.childs[0] = new AvatarTree(l_pinky4, 0, 20, l_pinky4.rotation, L_Pinky3);
 
-        // right hand bone tree
-        R_Wrist = new AvatarTree(r_wrist, 5, 0, r_wrist.rotation); // right wrist
+        R_Wrist = new AvatarTree(r_wrist, 5, 0, r_wrist.rotation);
         R_Thumb1 = R_Wrist.childs[0] = new AvatarTree(r_thumb1, 1, 1, r_thumb1.rotation, R_Wrist);
         R_Index1 = R_Wrist.childs[1] = new AvatarTree(r_index1, 1, 5, r_index1.rotation, R_Wrist);
         R_Middle1 = R_Wrist.childs[2] = new AvatarTree(r_middle1, 1, 9, r_middle1.rotation, R_Wrist);
@@ -220,7 +214,6 @@ public class Hand : MonoBehaviour
         float x, y, z;
         float[] dataArray = isLeft ? left_hand_data[idx] : right_hand_data[idx];
 
-        // index check
         if (idx >= 0 && idx < (isLeft ? left_hand_data.Length : right_hand_data.Length))
         {
             x = dataArray[0];
@@ -264,5 +257,33 @@ public class Hand : MonoBehaviour
         Quaternion rot = Quaternion.FromToRotation(dir1, dir2);
         Quaternion rot1 = tree.parent.transf.rotation;
         tree.parent.transf.rotation = Quaternion.Lerp(rot1, rot * rot1, lerp);
+    }
+
+    public void ResetPose()
+    {
+        ResetTree(L_Wrist);
+        ResetTree(R_Wrist);
+    }
+
+    private void ResetTree(AvatarTree tree)
+    {
+        if (tree == null || tree.transf == null)
+        {
+            return;
+        }
+
+        tree.transf.rotation = tree.quaternion;
+        if (tree.childs == null)
+        {
+            return;
+        }
+
+        foreach (var child in tree.childs)
+        {
+            if (child != null)
+            {
+                ResetTree(child);
+            }
+        }
     }
 }

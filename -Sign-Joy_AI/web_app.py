@@ -93,6 +93,8 @@ UNITY_UDP_PORT = int(os.environ.get("UNITY_UDP_PORT", "5054"))
 UNITY_DEFAULT_TARGET_FPS = 24
 UNITY_MIN_TARGET_FPS = 5
 UNITY_MAX_TARGET_FPS = 30
+UNITY_WEBGL_BUILD_ROOT = Path(app.static_folder) / "unity-webgl"
+UNITY_WEBGL_BUILD_DIR = UNITY_WEBGL_BUILD_ROOT / "Build"
 UNITY_BRIDGE_LOCK = Lock()
 UNITY_BRIDGE_THREAD: Thread | None = None
 UNITY_BRIDGE_STOP_EVENT: Event | None = None
@@ -476,6 +478,109 @@ def _extract_landmark_sequence(video_paths: list[Path]) -> dict[str, Any]:
         "frames": frames,
         "total_frames": len(frames),
         "clips": [path.stem for path in video_paths],
+    }
+
+
+def _extract_unity_sequence(video_paths: list[Path]) -> dict[str, Any]:
+    mp_holistic = mp.solutions.holistic
+    holistic = mp_holistic.Holistic(
+        static_image_mode=False,
+        model_complexity=1,
+        smooth_landmarks=True,
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5,
+        refine_face_landmarks=False,
+    )
+
+    frames: list[dict[str, Any]] = []
+
+    try:
+        for clip_index, video_path in enumerate(video_paths):
+            cap = cv2.VideoCapture(str(video_path))
+            if not cap.isOpened():
+                continue
+
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            fps = fps if fps and fps > 0 else 24.0
+            stride = max(1, int(round(fps / 30.0)))
+            delay_ms = round((1000.0 / fps) * stride, 2)
+
+            frame_index = 0
+            while cap.isOpened():
+                ok, frame = cap.read()
+                if not ok:
+                    break
+
+                if frame_index % stride != 0:
+                    frame_index += 1
+                    continue
+
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                result = holistic.process(rgb)
+                frame_payload = _unity_landmark_payload(result)
+                frame_payload["clip"] = video_path.stem
+                frame_payload["sequence_index"] = clip_index
+                frame_payload["delay_ms"] = delay_ms
+                frames.append(frame_payload)
+                frame_index += 1
+
+            cap.release()
+    finally:
+        holistic.close()
+
+    return {
+        "frames": frames,
+        "total_frames": len(frames),
+        "clips": [path.stem for path in video_paths],
+    }
+
+
+def _unity_webgl_build_status() -> dict[str, Any]:
+    build_dir = UNITY_WEBGL_BUILD_DIR
+    if not build_dir.exists():
+        return {
+            "available": False,
+            "message": "Unity WebGL build not found yet. Build the Unity project for WebGL first.",
+        }
+
+    loader_path = next(build_dir.glob("*.loader.js"), None)
+    if loader_path is None:
+        return {
+            "available": False,
+            "message": "Unity WebGL loader file is missing from the build output.",
+        }
+
+    build_name = loader_path.name.removesuffix(".loader.js")
+    data_path = build_dir / f"{build_name}.data"
+    framework_path = build_dir / f"{build_name}.framework.js"
+    code_path = build_dir / f"{build_name}.wasm"
+
+    missing_files = [
+        path.name
+        for path in (data_path, framework_path, code_path)
+        if not path.exists()
+    ]
+    if missing_files:
+        return {
+            "available": False,
+            "message": f"Unity WebGL build is incomplete. Missing: {', '.join(missing_files)}",
+        }
+
+    static_prefix = "/static/unity-webgl/Build"
+    return {
+        "available": True,
+        "message": "Unity WebGL build is ready.",
+        "build_name": build_name,
+        "loader_url": f"{static_prefix}/{loader_path.name}",
+        "data_url": f"{static_prefix}/{data_path.name}",
+        "framework_url": f"{static_prefix}/{framework_path.name}",
+        "code_url": f"{static_prefix}/{code_path.name}",
+        "updated_at": max(
+            loader_path.stat().st_mtime,
+            data_path.stat().st_mtime,
+            framework_path.stat().st_mtime,
+            code_path.stat().st_mtime,
+        ),
     }
 
 
@@ -2018,6 +2123,21 @@ def overlay_progress():
 @app.get("/api/unity/status")
 def unity_status():
     return jsonify(_get_unity_bridge_status())
+
+
+@app.get("/api/unity/webgl/status")
+def unity_webgl_status():
+    return jsonify(_unity_webgl_build_status())
+
+
+@app.get("/api/unity/sequence")
+def unity_sequence():
+    video_paths = _parse_video_paths(request.args.get("paths", ""), deduplicate=False)
+
+    if not video_paths:
+        return jsonify({"error": "No valid mapped video paths were provided for Unity WebGL playback."}), 400
+
+    return jsonify(_extract_unity_sequence(video_paths))
 
 
 @app.post("/api/unity/play")
