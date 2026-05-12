@@ -92,7 +92,7 @@
                     </div>
                 </article>
 
-                <article class="games-card games-card-copy">
+                <article class="games-card games-card-copy games-card-math">
                     <div class="games-card-badge">Playable Now</div>
                     <div class="games-card-visual">
                         <div class="games-card-icon" aria-hidden="true">&#x1F3B4;</div>
@@ -129,8 +129,7 @@
                     </div>
                     <h3>Count and Add</h3>
                     <p>
-                        Children solve bright little addition puzzles by counting dots and
-                        picking the correct answer from four big choices.
+                        Children solve little addition puzzles by the correct answer from choices.
                     </p>
                     <ul class="games-feature-list">
                         <li>Great for early number confidence</li>
@@ -186,6 +185,14 @@
                             <button id="matchGameStartBtn" class="btn btn-primary" type="button">Start Match Game</button>
                             <button id="matchGameReplayBtn" class="btn btn-secondary" type="button" disabled>Replay Clip</button>
                             <button id="matchGameNextBtn" class="btn btn-ghost" type="button" disabled>Next Round</button>
+                        </div>
+                        <div id="matchGameWinModal" class="match-game-win-modal" aria-hidden="true" hidden>
+                            <div class="match-game-win-card" role="dialog" aria-modal="true" aria-labelledby="matchGameWinTitle">
+                                <div class="match-game-win-icon" aria-hidden="true">&#x1F389;</div>
+                                <p id="matchGameWinTitle" class="match-game-win-title">Well Done!</p>
+                                <p class="match-game-win-message">You completed all 10 rounds successfully!</p>
+                                <button id="matchGamePlayAgainBtn" class="btn btn-primary" type="button">Play Again</button>
+                            </div>
                         </div>
                     </div>
 
@@ -277,6 +284,14 @@
                             <button class="memory-card" type="button" disabled>
                                 <span class="memory-card-face memory-card-back">?</span>
                             </button>
+                        </div>
+                        <div id="memoryGameWinModal" class="memory-game-win-modal" aria-hidden="true" hidden>
+                            <div class="memory-game-win-card" role="dialog" aria-modal="true" aria-labelledby="memoryGameWinTitle">
+                                <div class="memory-game-win-icon" aria-hidden="true">&#x1F389;</div>
+                                <p id="memoryGameWinTitle" class="memory-game-win-title">Well Done!</p>
+                                <p class="memory-game-win-message">All pairs matched successfully!</p>
+                                <button id="memoryGamePlayAgainBtn" class="btn btn-primary" type="button">Play Again</button>
+                            </div>
                         </div>
                         <div class="games-stage-toolbar">
                             <button id="memoryGameStartBtn" class="btn btn-primary" type="button">Start Memory Cards</button>

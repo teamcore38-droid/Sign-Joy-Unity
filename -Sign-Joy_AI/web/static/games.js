@@ -9,6 +9,8 @@ const matchGamePopupEl = document.getElementById("matchGamePopup");
 const matchGamePopupIconEl = document.getElementById("matchGamePopupIcon");
 const matchGamePopupTitleEl = document.getElementById("matchGamePopupTitle");
 const matchGamePopupMessageEl = document.getElementById("matchGamePopupMessage");
+const matchGameWinModalEl = document.getElementById("matchGameWinModal");
+const matchGamePlayAgainBtn = document.getElementById("matchGamePlayAgainBtn");
 const matchGameRoundsValueEl = document.getElementById("matchGameRoundsValue");
 const matchGameCorrectValueEl = document.getElementById("matchGameCorrectValue");
 const matchGameStarsValueEl = document.getElementById("matchGameStarsValue");
@@ -23,6 +25,8 @@ const memoryGameFeedbackEl = document.getElementById("memoryGameFeedback");
 const memoryGamePairsValueEl = document.getElementById("memoryGamePairsValue");
 const memoryGameMovesValueEl = document.getElementById("memoryGameMovesValue");
 const memoryGameStarsValueEl = document.getElementById("memoryGameStarsValue");
+const memoryGameWinModalEl = document.getElementById("memoryGameWinModal");
+const memoryGamePlayAgainBtn = document.getElementById("memoryGamePlayAgainBtn");
 const memoryGameStartBtn = document.getElementById("memoryGameStartBtn");
 const memoryGameResetBtn = document.getElementById("memoryGameResetBtn");
 const mathGameRoundLabelEl = document.getElementById("mathGameRoundLabel");
@@ -41,6 +45,7 @@ const mathGameNextBtn = document.getElementById("mathGameNextBtn");
 
 let matchGamePopupHideTimer = null;
 let matchGamePopupCleanupTimer = null;
+const matchGameMaxRounds = 10;
 
 const matchGameState = {
     roundNumber: 0,
@@ -169,6 +174,22 @@ function showMatchGamePopup({ tone = "", icon = "😊", title = "", message = ""
     }, tone === "error" ? 1700 : 1900);
 }
 
+function hideMatchGameWinModal() {
+    if (!matchGameWinModalEl) return;
+    matchGameWinModalEl.hidden = true;
+    matchGameWinModalEl.setAttribute("aria-hidden", "true");
+    matchGameWinModalEl.classList.remove("is-visible");
+}
+
+function showMatchGameWinModal() {
+    if (!matchGameWinModalEl) return;
+    matchGameWinModalEl.hidden = false;
+    matchGameWinModalEl.setAttribute("aria-hidden", "false");
+    window.requestAnimationFrame(() => {
+        matchGameWinModalEl.classList.add("is-visible");
+    });
+}
+
 function setMemoryGameFeedback(message, tone = "") {
     if (!memoryGameFeedbackEl) return;
     memoryGameFeedbackEl.textContent = message;
@@ -178,6 +199,22 @@ function setMemoryGameFeedback(message, tone = "") {
     } else if (tone === "error") {
         memoryGameFeedbackEl.classList.add("is-error");
     }
+}
+
+function hideMemoryGameWinModal() {
+    if (!memoryGameWinModalEl) return;
+    memoryGameWinModalEl.hidden = true;
+    memoryGameWinModalEl.setAttribute("aria-hidden", "true");
+    memoryGameWinModalEl.classList.remove("is-visible");
+}
+
+function showMemoryGameWinModal() {
+    if (!memoryGameWinModalEl) return;
+    memoryGameWinModalEl.hidden = false;
+    memoryGameWinModalEl.setAttribute("aria-hidden", "false");
+    window.requestAnimationFrame(() => {
+        memoryGameWinModalEl.classList.add("is-visible");
+    });
 }
 
 function setMathGameFeedback(message, tone = "") {
@@ -522,7 +559,11 @@ function renderMemoryGameBoard() {
             placeholder.type = "button";
             placeholder.className = "memory-card";
             placeholder.disabled = true;
-            placeholder.innerHTML = '<span class="memory-card-face memory-card-back">?</span>';
+            placeholder.innerHTML = `
+                <div class="memory-card-inner">
+                    <div class="memory-card-face memory-card-back">?</div>
+                </div>
+            `;
             memoryGameBoardEl.appendChild(placeholder);
         }
         return;
@@ -552,10 +593,10 @@ function renderMemoryGameBoard() {
             `;
 
         button.innerHTML = `
-            <span class="memory-card-inner">
-                <span class="memory-card-face memory-card-back">?</span>
+            <div class="memory-card-inner">
+                <div class="memory-card-face memory-card-back">?</div>
                 ${frontContent}
-            </span>
+            </div>
         `;
 
         button.addEventListener("click", () => handleMemoryGameCardClick(card.id));
@@ -614,6 +655,7 @@ async function resolveMemoryGameTurn() {
         if (memoryGameState.matchedPairs === memoryGameState.pairCount) {
             setMemoryGameFeedback(`Amazing! You matched all ${memoryGameState.pairCount} pairs.`, "success");
             setMemoryGamePrompt("Board complete. Press New Board to play again.");
+            showMemoryGameWinModal();
         }
         return;
     }
@@ -669,6 +711,20 @@ function markMatchGameChoiceWrong(button) {
     button.classList.add("is-wrong");
 }
 
+function restartMatchGame() {
+    matchGameState.roundNumber = 0;
+    matchGameState.correctAnswers = 0;
+    matchGameState.stars = 0;
+    matchGameState.currentRound = null;
+    matchGameState.answered = false;
+    matchGameState.lastToken = "";
+    hideMatchGamePopup(true);
+    hideMatchGameWinModal();
+    updateMatchGameHeader();
+    updateMatchGameScoreboard();
+    loadNextMatchGameRound();
+}
+
 function handleMatchGameChoice(choice, button) {
     if (!matchGameState.currentRound || matchGameState.answered || matchGameState.loading) {
         return;
@@ -690,12 +746,24 @@ function handleMatchGameChoice(choice, button) {
         lockMatchGameChoices(matchGameState.currentRound.correct_token, choice.token);
         updateMatchGameScoreboard();
 
-        if (matchGamePromptEl) {
-            matchGamePromptEl.textContent = "You matched the sign correctly. Press Next Round to keep going.";
-        }
+        if (matchGameState.roundNumber >= matchGameMaxRounds) {
+            hideMatchGamePopup(true);
+            setMatchGameFeedback(`Amazing! You completed all ${matchGameMaxRounds} rounds.`, "success");
+            if (matchGamePromptEl) {
+                matchGamePromptEl.textContent = "You finished the full Match the Sign game.";
+            }
+            if (matchGameNextBtn) {
+                matchGameNextBtn.disabled = true;
+            }
+            showMatchGameWinModal();
+        } else {
+            if (matchGamePromptEl) {
+                matchGamePromptEl.textContent = "You matched the sign correctly. Press Next Round to keep going.";
+            }
 
-        if (matchGameNextBtn) {
-            matchGameNextBtn.disabled = false;
+            if (matchGameNextBtn) {
+                matchGameNextBtn.disabled = false;
+            }
         }
     } else {
         setMatchGameFeedback("Wrong answer. Try again.", "error");
@@ -723,6 +791,7 @@ function applyMatchGameRound(roundData) {
     updateMatchGameScoreboard();
     renderMatchGameChoices(roundData);
     hideMatchGamePopup(true);
+    hideMatchGameWinModal();
 
     if (matchGamePromptEl) {
         matchGamePromptEl.textContent = "Watch the sign clip, then tap the matching answer.";
@@ -760,6 +829,7 @@ function applyMemoryGameRound(roundData) {
     updateMemoryGameHeader();
     updateMemoryGameScoreboard();
     renderMemoryGameBoard();
+    hideMemoryGameWinModal();
     setMemoryGamePrompt("Flip one word card and one sign-video card to find a matching pair.");
     setMemoryGameFeedback("Find pairs that share the same sign meaning.");
 
@@ -847,12 +917,7 @@ if (matchGameVideoEl && matchGameVideoFallbackEl) {
 
 if (matchGameStartBtn) {
     matchGameStartBtn.addEventListener("click", () => {
-        matchGameState.roundNumber = 0;
-        matchGameState.correctAnswers = 0;
-        matchGameState.stars = 0;
-        matchGameState.lastToken = "";
-        updateMatchGameScoreboard();
-        loadNextMatchGameRound();
+        restartMatchGame();
     });
 }
 
@@ -868,6 +933,12 @@ if (matchGameNextBtn) {
     });
 }
 
+if (matchGamePlayAgainBtn) {
+    matchGamePlayAgainBtn.addEventListener("click", () => {
+        restartMatchGame();
+    });
+}
+
 if (memoryGameStartBtn) {
     memoryGameStartBtn.addEventListener("click", () => {
         memoryGameState.roundNumber = 0;
@@ -877,6 +948,12 @@ if (memoryGameStartBtn) {
 
 if (memoryGameResetBtn) {
     memoryGameResetBtn.addEventListener("click", () => {
+        loadNextMemoryGameRound();
+    });
+}
+
+if (memoryGamePlayAgainBtn) {
+    memoryGamePlayAgainBtn.addEventListener("click", () => {
         loadNextMemoryGameRound();
     });
 }
