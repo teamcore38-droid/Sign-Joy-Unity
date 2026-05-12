@@ -2,60 +2,87 @@
 
 # Sign Joy Unity
 
-This repository combines two related projects:
+This repository combines:
 
-1. `Unity/` + `Python/`
-   Real-time webcam pose tracking with MediaPipe, sending landmarks to a Unity avatar over UDP.
-2. `-Sign-Joy_AI/`
-   A Flask web app that accepts text or voice input, maps tokens to sign-language dataset clips, generates MediaPipe landmark sequences from those clips, and can now drive:
-   - an embedded Unity WebGL scene in the browser
-   - the Unity desktop avatar over UDP
+1. `Unity/`
+   A Unity avatar project that can receive sign landmark data and play it on a 3D character.
+2. `Python/`
+   The original live webcam-to-Unity MediaPipe bridge.
+3. `-Sign-Joy_AI/`
+   A Flask web app for children that turns typed or spoken input into sign clips, landmark playback, 2D overlays, browser 3D views, and Unity playback.
 
-The desktop integration target is:
+This README is written for setting up the project on another laptop from scratch.
 
-- Unity receives UDP data on `127.0.0.1:5054`
-- SignJoy AI can replay mapped sign sequences into Unity with `Play in Unity`
+## What You Can Run
 
-## Project layout
+You can use the repo in 3 main ways:
 
-- `Unity/` - Unity 2021.3 project with the avatar and UDP receiver
-- `Python/` - original live webcam-to-Unity MediaPipe bridge
-- `-Sign-Joy_AI/` - SignJoy AI web app with text/voice input, dataset playback, 2D overlays, 3D browser visualizations, embedded Unity WebGL playback, and Unity desktop bridge
+### 1. Web app only
 
-## Recommended versions
+Run the Flask app and use:
 
-Use these versions on another laptop for the smoothest setup:
+- the homepage at `/`
+- the Learning page at `/learn`
+- the Games page at `/games`
+- the embedded Unity WebGL scene already included in the repo
+
+This is the easiest setup.
+
+### 2. Web app + Unity desktop avatar
+
+Run the Flask app and the Unity editor together.
+The web app can stream the mapped sign sequence to the Unity avatar over UDP.
+
+Default Unity bridge settings:
+
+- host: `127.0.0.1`
+- port: `5054`
+
+### 3. Original webcam-to-Unity tracking
+
+Run the older `Python/` MediaPipe script and animate the Unity avatar directly from a webcam.
+
+## Recommended Software
+
+For the smoothest setup on another laptop, use:
 
 - Windows 10 or Windows 11
 - Unity Hub
 - Unity Editor `2021.3.22f1`
+- Python `3.11.x`
 - VS Code
-- Python `3.11.x` for `-Sign-Joy_AI`
-- Python `3.12.x` or `3.11.x` for the original `Python/` live-tracking script
-- Chrome or Edge for the SignJoy AI web app
+- Google Chrome or Microsoft Edge
 
-Why:
+Why these versions:
 
-- The Unity project is pinned to `2021.3.22f1` in `Unity/ProjectSettings/ProjectVersion.txt`
-- `-Sign-Joy_AI` uses `mediapipe==0.10.21`, which is easiest on Python 3.11
+- the Unity project is pinned to `2021.3.22f1` in [Unity/ProjectSettings/ProjectVersion.txt](Unity/ProjectSettings/ProjectVersion.txt)
+- `mediapipe==0.10.21` in the web app is usually easiest on Python 3.11
 
-## What each mode does
+## Project Layout
 
-### Mode A: Original live webcam tracking
+- [Unity](Unity) - Unity project with avatar, scripts, and WebGL build helper
+- [Python](Python) - original webcam MediaPipe bridge
+- [-Sign-Joy_AI](<-Sign-Joy_AI>) - Flask web app and frontend
+- [README.md](README.md) - this root setup guide
 
-This runs the old MediaPipe webcam script from `Python/` and animates the Unity avatar from your live camera.
+Important web files:
 
-### Mode B: SignJoy AI to Unity desktop avatar
+- [-Sign-Joy_AI/web_app.py](<-Sign-Joy_AI/web_app.py>)
+- [-Sign-Joy_AI/requirements.txt](<-Sign-Joy_AI/requirements.txt>)
+- [-Sign-Joy_AI/web/templates/learn.html](<-Sign-Joy_AI/web/templates/learn.html>)
+- [-Sign-Joy_AI/web/templates/games.html](<-Sign-Joy_AI/web/templates/games.html>)
+- [-Sign-Joy_AI/web/static/styles.css](<-Sign-Joy_AI/web/static/styles.css>)
+- [-Sign-Joy_AI/web/static/app.js](<-Sign-Joy_AI/web/static/app.js>)
 
-This runs the Flask web app from `-Sign-Joy_AI/`, lets the user enter text or voice, maps that input to dataset videos, extracts landmarks from those sign clips, and sends them to the Unity avatar.
+Important Unity files:
 
-This is the main integrated workflow added in this repo.
+- [Unity/Assets/Scenes/SampleScene.unity](Unity/Assets/Scenes/SampleScene.unity)
+- [Unity/Assets/Scripts/DataManager.cs](Unity/Assets/Scripts/DataManager.cs)
+- [Unity/Assets/Scripts/Body.cs](Unity/Assets/Scripts/Body.cs)
+- [Unity/Assets/Scripts/Hand.cs](Unity/Assets/Scripts/Hand.cs)
+- [Unity/Assets/Editor/SignJoyWebGLBuild.cs](Unity/Assets/Editor/SignJoyWebGLBuild.cs)
 
-### Mode C: SignJoy AI to embedded Unity WebGL scene
-
-This uses the same SignJoy AI pipeline, but plays the mapped landmark sequence inside an embedded Unity WebGL scene shown directly on the `/learn` page under the 2D overlay section.
-
-## First-time setup on another laptop
+## First-Time Setup On Another Laptop
 
 ### 1. Install software
 
@@ -63,60 +90,54 @@ Install:
 
 - Unity Hub
 - Unity Editor `2021.3.22f1`
-- VS Code
 - Python `3.11`
-- optionally Python `3.12` if you also want the original webcam script exactly as tested
+- VS Code
+- Chrome or Edge
 
-### 2. Download the repository
+When installing Python on Windows:
 
-You can clone it with Git:
+- enable `Add Python to PATH`
+
+Verify:
+
+```powershell
+python --version
+py --version
+```
+
+### 2. Clone the repository
 
 ```powershell
 git clone https://github.com/teamcore38-droid/Sign-Joy-Unity.git
 cd Sign-Joy-Unity
 ```
 
-Or download the ZIP from GitHub and extract it.
+You can also download the ZIP from GitHub and extract it manually.
 
-### 3. Open the Unity project
+### 3. Open the Unity project once
 
 1. Open Unity Hub
 2. Click `Open`
-3. Select the `Unity` folder inside this repository
-4. Let Unity import the project
-5. Open `Assets > Scenes > SampleScene`
+3. Select the [Unity](Unity) folder
+4. Wait for Unity to import the project
+5. Open [Unity/Assets/Scenes/SampleScene.unity](Unity/Assets/Scenes/SampleScene.unity)
 
-The Unity avatar receiver is already configured to listen on UDP port `5054`.
+## Fastest Way To Run The Project
 
-### 4. Build the Unity WebGL export once
+If you only want the app working on another laptop as quickly as possible:
 
-This step is required only if you want the Unity 3D scene to appear inside the SignJoy AI browser page.
+1. Start the Flask app
+2. Open `http://127.0.0.1:5001/learn`
+3. Use the already-included Unity WebGL build in the browser
 
-1. Open the `Unity/` project
-2. Wait for Unity to finish importing and compiling scripts
-3. Open `SampleScene`
-4. Click `Build > Build SignJoy WebGL`
-5. Wait for the export to finish
+You do not need to rebuild WebGL just to run the site, because the repo already contains:
 
-The WebGL build is written into:
+- [-Sign-Joy_AI/web/static/unity-webgl/Build](<-Sign-Joy_AI/web/static/unity-webgl/Build>)
+- [-Sign-Joy_AI/web/static/unity-webgl/TemplateData](<-Sign-Joy_AI/web/static/unity-webgl/TemplateData>)
 
-```text
--Sign-Joy_AI/web/static/unity-webgl/
-```
+Rebuild WebGL only if you changed the Unity scene or scripts and want those changes reflected in the browser.
 
-## Run the integrated SignJoy AI + Unity flow
-
-This is the recommended full-project workflow.
-
-### Step 1. Start Unity
-
-1. Open the `Unity/` project in Unity Hub
-2. Open `SampleScene`
-3. Press the `Play` button in Unity
-
-Keep Unity running in Play mode.
-
-### Step 2. Set up SignJoy AI
+## Run The Flask Web App
 
 Open a terminal in the repository root and run:
 
@@ -136,31 +157,154 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
 ```
 
-### Step 3. Open the web app
+The app starts at:
 
-Open this URL in Chrome or Edge:
+- `http://127.0.0.1:5001/`
 
-```text
-http://127.0.0.1:5001/learn
+Important pages:
+
+- Homepage: `http://127.0.0.1:5001/`
+- Learning page: `http://127.0.0.1:5001/learn`
+- Games page: `http://127.0.0.1:5001/games`
+
+Port details:
+
+- default host: `127.0.0.1`
+- default port: `5001`
+
+You can change the port if needed:
+
+```powershell
+$env:WEB_APP_PORT=8000
+python web_app.py
 ```
 
-### Step 4. Use SignJoy AI
+## Web App Requirements
 
-1. Type text such as `one plus two`
-2. Or click `Use My Voice`
+The web app requirements currently come from [requirements.txt](<-Sign-Joy_AI/requirements.txt>):
+
+- `flask`
+- `opencv-python`
+- `mediapipe==0.10.21`
+- `googletrans==4.0.0-rc1`
+- `speechrecognition`
+- `legacy-cgi`
+
+Optional:
+
+- `pyaudio` for older Python microphone scripts
+- `tensorflow` only for training/prediction-related scripts, not for normal web usage
+
+## Run The Web App With Unity Desktop Avatar
+
+Use this mode if you want `Play in Unity` on the Learning page.
+
+### Step 1. Start Unity
+
+1. Open the [Unity](Unity) project
+2. Open [SampleScene.unity](Unity/Assets/Scenes/SampleScene.unity)
+3. Press the Unity `Play` button
+
+### Step 2. Start the Flask app
+
+```powershell
+cd ".\-Sign-Joy_AI"
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python web_app.py
+```
+
+### Step 3. Use the Learning page
+
+Open:
+
+- `http://127.0.0.1:5001/learn`
+
+Then:
+
+1. Type something like `one plus two`
+2. Or use the browser microphone
 3. Click `Make My Signs`
-4. Wait for the mapped sequence to appear
-5. Click `Play 3D Scene` to play the embedded Unity scene in the browser
-6. Optionally click `Play in Unity` to also stream the same sequence to the separate Unity desktop app
+4. Click `Play in Unity`
 
-The mapped sign sequence can now be replayed:
+Unity will receive landmark payloads on:
 
-- inside the browser in the embedded Unity WebGL scene
-- inside the standalone Unity desktop avatar over UDP
+- host: `127.0.0.1`
+- port: `5054`
 
-## Run the original webcam-to-Unity flow
+Those defaults come from:
 
-Use this if you want the old live body-tracking mode instead of the SignJoy dataset mode.
+- [-Sign-Joy_AI/web_app.py](<-Sign-Joy_AI/web_app.py>)
+- [Python/global_vars.py](Python/global_vars.py)
+
+You can override the bridge host/port for the Flask app with environment variables:
+
+```powershell
+$env:UNITY_UDP_HOST="127.0.0.1"
+$env:UNITY_UDP_PORT="5054"
+python web_app.py
+```
+
+## Run The Embedded Unity WebGL Scene
+
+This is the Unity 3D panel inside the browser on `/learn`.
+
+Good news:
+
+- the WebGL build is already committed in the repo
+- a fresh laptop can usually run it immediately after starting the Flask app
+
+To use it:
+
+1. Start the Flask app
+2. Open `http://127.0.0.1:5001/learn`
+3. Click `Make My Signs`
+4. Click `Play 3D Scene`
+
+## Rebuild The Unity WebGL Export
+
+Only do this if:
+
+- you changed the Unity scene
+- you changed Unity scripts that affect WebGL playback
+- the embedded Unity browser scene needs to reflect your latest Unity changes
+
+### Option A. Use the Unity menu
+
+1. Open the `Unity/` project
+2. Wait for Unity to compile
+3. Open `SampleScene`
+4. Click `Build > Build SignJoy WebGL`
+
+This runs:
+
+- [Unity/Assets/Editor/SignJoyWebGLBuild.cs](Unity/Assets/Editor/SignJoyWebGLBuild.cs)
+
+Output folder:
+
+- [-Sign-Joy_AI/web/static/unity-webgl](<-Sign-Joy_AI/web/static/unity-webgl>)
+
+### Option B. Build from command line
+
+If Unity is installed at the default Windows path:
+
+```powershell
+& "C:\Program Files\Unity\Hub\Editor\2021.3.22f1\Editor\Unity.exe" `
+  -batchmode `
+  -quit `
+  -projectPath "C:\path\to\Sign-Joy-Unity\Unity" `
+  -executeMethod SignJoyWebGLBuild.Build
+```
+
+Important:
+
+- make sure the Unity project is not already open in another editor instance when using batch mode
+
+## Run The Original Webcam-To-Unity Mode
+
+This is the older non-web pipeline from the `Python/` folder.
 
 ### Step 1. Start Unity
 
@@ -168,58 +312,65 @@ Use this if you want the old live body-tracking mode instead of the SignJoy data
 2. Open `SampleScene`
 3. Press `Play`
 
-### Step 2. Set up the Python live-tracking script
+### Step 2. Create a Python environment for the old script
 
-Open another terminal:
+Open a second terminal:
 
 ```powershell
 cd ".\Python"
-py -3.12 -m venv .venv
+py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install mediapipe==0.10.21 opencv-contrib-python
 python main.py
 ```
 
-If you prefer Python 3.11 and it is installed, this also works:
-
-```powershell
-py -3.11 -m venv .venv
-```
-
-### Step 3. Use the webcam mode
-
-- Stand in front of the camera
-- Keep enough of your body visible
-- The Unity avatar should follow the incoming pose
-
-To stop:
-
-- press `Esc` in the webcam window, or
-- stop the Python process, then stop Unity Play mode
-
-## UDP integration details
-
-The Unity project expects JSON in this shape:
-
-```json
-{
-  "left_hand": [{"x": 0.0, "y": 0.0, "z": 0.0}],
-  "right_hand": [{"x": 0.0, "y": 0.0, "z": 0.0}],
-  "pose": [{"x": 0.0, "y": 0.0, "z": 0.0}]
-}
-```
-
-It listens on:
+This mode uses:
 
 - host: `127.0.0.1`
 - port: `5054`
 
-The SignJoy AI Unity desktop bridge uses the same payload contract, so the Unity side does not need to be changed.
+from [Python/global_vars.py](Python/global_vars.py).
 
-## VS Code usage
+## How To Use The Main Features
 
-You can open the repository root in VS Code.
+### Homepage
+
+- visit `/`
+- explore the landing content
+- open the Learning or Games pages
+
+### Learning page
+
+- type text such as `one plus two`
+- or use browser speech recognition
+- click `Make My Signs`
+- then explore:
+  - sign clips
+  - overlay animation
+  - cartoon instructor
+  - embedded Unity 3D scene
+  - Unity desktop streaming
+
+### Games page
+
+- visit `/games`
+- try `Match the Sign`
+- try `Memory Cards`
+- try `Count and Add`
+
+## What Must Already Exist In The Repo
+
+These should already be present after clone/download:
+
+- dataset video folders used by the sign mapping pipeline
+- web templates and static assets
+- the Unity project files
+- the prebuilt Unity WebGL output
+
+If any are missing, some parts of the app may start but will not work correctly.
+
+## VS Code Setup
 
 Recommended extensions:
 
@@ -233,89 +384,91 @@ For Unity C# editing:
 2. Go to `Edit > Preferences > External Tools`
 3. Set `External Script Editor` to `Visual Studio Code`
 
-## Important files
-
-### Unity side
-
-- `Unity/Assets/Scripts/DataManager.cs`
-- `Unity/Assets/Scripts/Body.cs`
-- `Unity/Assets/Scripts/Hand.cs`
-- `Unity/Assets/Editor/SignJoyWebGLBuild.cs`
-- `Unity/Assets/Scenes/SampleScene.unity`
-
-### Original live-tracking side
-
-- `Python/main.py`
-- `Python/body.py`
-- `Python/global_vars.py`
-
-### SignJoy AI side
-
-- `-Sign-Joy_AI/web_app.py`
-- `-Sign-Joy_AI/web_pipeline.py`
-- `-Sign-Joy_AI/web/templates/learn.html`
-- `-Sign-Joy_AI/web/static/app.js`
-
 ## Troubleshooting
 
-### Unity avatar does not move in SignJoy mode
-
-Check:
-
-- Unity is open and in Play mode
-- `SampleScene` is open
-- SignJoy AI is running on `http://127.0.0.1:5001/learn`
-- you clicked `Play in Unity`
-- Windows firewall is not blocking local UDP
-
-### `mediapipe` install fails
-
-Use Python 3.11 for `-Sign-Joy_AI`.
-
-### Voice input does not work in the browser
-
-- Use Chrome or Edge
-- allow microphone access
-- try refreshing the page
-
-### Sign clip sequence appears, but Unity still stays in T-pose
-
-That usually means:
-
-- Unity is not in Play mode, or
-- no landmarks are being produced for the mapped clips, or
-- the local bridge is not running in the SignJoy backend
-
-### Embedded Unity 3D scene does not appear on `/learn`
-
-Check:
-
-- you ran `Build > Build SignJoy WebGL` in the Unity project
-- the folder `-Sign-Joy_AI/web/static/unity-webgl/Build/` exists
-- you hard-refreshed the browser after rebuilding
-- the `Unity 3D Scene` status line does not say the build is missing
-
-### PowerShell activation blocked
-
-Run:
+### PowerShell cannot activate the virtual environment
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
 ```
+
+### `python` or `py` is not found
+
+Reinstall Python and enable `Add Python to PATH`.
+
+### `mediapipe` install fails
+
+Use Python 3.11:
+
+```powershell
+python -m pip install --upgrade pip
+pip install mediapipe==0.10.21
+```
+
+### Web app runs, but the browser page is blank or broken
+
+Check:
+
+- you installed the requirements from [-Sign-Joy_AI/requirements.txt](<-Sign-Joy_AI/requirements.txt>)
+- you are opening `http://127.0.0.1:5001/`
+- you are using Chrome or Edge
+
+### Browser microphone does not work
+
+Check:
+
+- you are using Chrome or Edge
+- microphone permission is allowed for `127.0.0.1`
+- you refreshed the page after granting permission
+
+### Embedded Unity 3D Scene does not appear on `/learn`
+
+Check:
+
+- the Flask app is running
+- the folder [-Sign-Joy_AI/web/static/unity-webgl/Build](<-Sign-Joy_AI/web/static/unity-webgl/Build>) exists
+- if you recently changed Unity, rebuild WebGL
+- hard refresh the browser after rebuilding
+
+### `Play in Unity` does nothing
+
+Check:
+
+- Unity is open
+- `SampleScene` is open
+- Unity is in Play mode
+- the Flask app is running
+- local firewall is not blocking UDP on `127.0.0.1:5054`
+
+### Unity is open, but command-line WebGL build fails
+
+That usually means the same Unity project is already open in another Unity editor instance.
+Close that instance first, then retry the batch build.
+
+### The old webcam mode does not move the avatar
+
+Check:
+
+- Unity is in Play mode
+- `python main.py` from the [Python](Python) folder is running
+- your webcam is available
+- `HOST` and `PORT` in [Python/global_vars.py](Python/global_vars.py) still match Unity
 
 ## Notes
 
-- The repository intentionally ignores Unity `Library/`, `Temp/`, logs, and Python virtual environments.
-- The `Unity/Tracking.7z` file is kept as part of the original project contents.
-- The folder name `-Sign-Joy_AI` starts with `-`, so in PowerShell it is safest to `cd` using quotes:
+- the folder name `-Sign-Joy_AI` starts with `-`, so in PowerShell it is safest to `cd` using quotes:
 
 ```powershell
 cd ".\-Sign-Joy_AI"
 ```
 
-## Quick start summary
+- the repo intentionally does not include Python virtual environments or Unity `Library/` cache for portability
+- the Unity project may take some time to import on a fresh laptop the first time
 
-### SignJoy AI + Unity
+## Quick Start Summary
+
+### Web app only
 
 ```powershell
 git clone https://github.com/teamcore38-droid/Sign-Joy-Unity.git
@@ -328,12 +481,23 @@ pip install -r requirements.txt
 python web_app.py
 ```
 
-Then:
+Then open:
 
-1. Open the Unity project from `Unity/`
-2. Run `Build > Build SignJoy WebGL` once
-3. Press Play in `SampleScene` if you also want the desktop Unity app
-4. Open `http://127.0.0.1:5001/learn`
-5. Click `Make My Signs`
-6. Click `Play 3D Scene` for the embedded browser Unity scene
-7. Optionally click `Play in Unity` for the desktop Unity scene
+- `http://127.0.0.1:5001/learn`
+
+### Web app + Unity desktop
+
+1. Open the [Unity](Unity) project
+2. Open [SampleScene.unity](Unity/Assets/Scenes/SampleScene.unity)
+3. Press Play in Unity
+4. Start the Flask app
+5. Open `http://127.0.0.1:5001/learn`
+6. Click `Make My Signs`
+7. Click `Play in Unity`
+
+### Rebuild browser Unity scene after Unity changes
+
+1. Open Unity
+2. Open `SampleScene`
+3. Click `Build > Build SignJoy WebGL`
+4. Refresh `/learn`
