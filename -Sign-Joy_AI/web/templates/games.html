@@ -48,17 +48,11 @@
             </div>
 
             <div class="games-hero-art" aria-hidden="true">
-                <div class="games-hero-card games-hero-card-main">
-                    <p>Today&rsquo;s goal</p>
-                    <strong>Learn 3 signs</strong>
-                    <span>Watch, match, and copy with the avatar.</span>
-                </div>
-                <div class="games-hero-card games-hero-card-side">
-                    <p>Reward</p>
-                    <strong>3 stars</strong>
-                    <span>Earn a star for each finished round.</span>
-                </div>
-                <div class="games-hero-buddy">Hi!</div>
+                <img
+                    class="games-hero-image"
+                    src="{{ url_for('static', filename='assets/Games-hero-image.png') }}"
+                    alt=""
+                >
             </div>
         </header>
 
@@ -74,11 +68,18 @@
             <div class="games-card-grid">
                 <article class="games-card games-card-match">
                     <div class="games-card-badge">Build First</div>
-                    <div class="games-card-icon" aria-hidden="true">Aa</div>
+                    <div class="games-card-visual">
+                        <div class="games-card-icon" aria-hidden="true">Aa</div>
+                        <img
+                            class="games-card-illustration games-card-illustration-match"
+                            src="{{ url_for('static', filename='assets/games-card-match-sign.svg') }}"
+                            alt=""
+                        >
+                    </div>
                     <h3>Match the Sign</h3>
                     <p>
                         The child watches one sign animation and taps the correct word from
-                        2 or 3 large choices.
+                        4 large choices.
                     </p>
                     <ul class="games-feature-list">
                         <li>Best for early recognition</li>
@@ -92,21 +93,53 @@
                 </article>
 
                 <article class="games-card games-card-copy">
-                    <div class="games-card-badge">Build Second</div>
-                    <div class="games-card-icon" aria-hidden="true">3D</div>
-                    <h3>Copy the Sign</h3>
+                    <div class="games-card-badge">Playable Now</div>
+                    <div class="games-card-visual">
+                        <div class="games-card-icon" aria-hidden="true">&#x1F3B4;</div>
+                        <img
+                            class="games-card-illustration games-card-illustration-memory"
+                            src="{{ url_for('static', filename='assets/games-card-memory-cards.svg') }}"
+                            alt=""
+                        >
+                    </div>
+                    <h3>Memory Cards</h3>
                     <p>
-                        The Unity avatar performs one sign at a time while the child watches,
-                        copies, and moves to the next sign.
+                        Flip cards to match a sign-word card with its matching sign-video card.
                     </p>
                     <ul class="games-feature-list">
-                        <li>Best use of the Unity avatar</li>
-                        <li>Encourages movement and repetition</li>
-                        <li>Can later add camera practice feedback</li>
+                        <li>Great for memory and repetition</li>
+                        <li>Uses the same mapped sign clips</li>
+                        <li>Simple tap-based play for children</li>
                     </ul>
                     <div class="games-card-actions">
-                        <a class="btn btn-secondary" href="#copyPreview">Preview Layout</a>
-                        <button class="btn btn-ghost" type="button" disabled>Playable Soon</button>
+                        <a class="btn btn-primary" href="#memoryPreview">Play Memory Cards</a>
+                        <button class="btn btn-ghost" type="button" disabled>Starter Pool</button>
+                    </div>
+                </article>
+
+                <article class="games-card games-card-copy">
+                    <div class="games-card-badge">Playable Now</div>
+                    <div class="games-card-visual">
+                        <div class="games-card-icon" aria-hidden="true">1+2</div>
+                        <img
+                            class="games-card-illustration games-card-illustration-copy"
+                            src="{{ url_for('static', filename='assets/games-card-math-play.svg') }}"
+                            alt=""
+                        >
+                    </div>
+                    <h3>Count and Add</h3>
+                    <p>
+                        Children solve bright little addition puzzles by counting dots and
+                        picking the correct answer from four big choices.
+                    </p>
+                    <ul class="games-feature-list">
+                        <li>Great for early number confidence</li>
+                        <li>Uses large buttons and short rounds</li>
+                        <li>Keeps maths playful and low-pressure</li>
+                    </ul>
+                    <div class="games-card-actions">
+                        <a class="btn btn-primary" href="#mathPreview">Play Maths Game</a>
+                        <button class="btn btn-ghost" type="button" disabled>Mini Sums</button>
                     </div>
                 </article>
             </div>
@@ -188,46 +221,187 @@
                                 <span class="games-choice-main">3</span>
                                 <span class="games-choice-helper">three</span>
                             </button>
+                            <button class="games-choice games-choice-placeholder" type="button" disabled>
+                                <span class="games-choice-main">equal</span>
+                                <span class="games-choice-helper">equals</span>
+                            </button>
                         </div>
-                        <p id="matchGameFeedback" class="games-feedback">
+                        <div id="matchGamePopup" class="games-match-popup" aria-hidden="true" hidden>
+                            <div id="matchGamePopupCard" class="games-match-popup-card">
+                                <div id="matchGamePopupIcon" class="games-match-popup-icon" aria-hidden="true">&#x1F60A;</div>
+                                <div class="games-match-popup-copy">
+                                    <p id="matchGamePopupTitle" class="games-match-popup-title">Great job!</p>
+                                    <p id="matchGamePopupMessage" class="games-match-popup-message">Correct Answer!</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="games-match-popup-slot" aria-hidden="true"></div>
+                        <p id="matchGameFeedback" class="games-feedback visually-hidden" aria-live="polite">
                             Start the game to load a real sign clip from the current dataset.
                         </p>
                     </div>
                 </div>
             </div>
 
-            <div id="copyPreview" class="games-preview">
+            <div id="memoryPreview" class="games-preview">
                 <div class="games-preview-head">
                     <div>
                         <p class="games-preview-kicker">Game 2</p>
-                        <h3>Copy the Sign</h3>
+                        <h3>Memory Cards</h3>
                     </div>
-                    <span class="games-preview-tag">Avatar-guided practice</span>
+                    <span class="games-preview-tag" id="memoryGameTag">Memory practice</span>
                 </div>
 
                 <div class="games-preview-split">
-                    <div class="games-preview-stage games-preview-stage-unity">
+                    <div class="games-preview-stage games-preview-stage-memory">
                         <div class="games-preview-stage-header">
-                            <span>Unity avatar</span>
-                            <span>Watch then try</span>
+                            <span>Find the matching pairs</span>
+                            <span id="memoryGameRoundLabel">Round 0</span>
                         </div>
-                        <div class="games-preview-unity-frame">
-                            <div class="games-preview-avatar">3D Avatar</div>
-                            <p>Embedded Unity avatar scene will be reused here.</p>
+                        <div id="memoryGameBoard" class="memory-game-board" aria-live="polite">
+                            <button class="memory-card" type="button" disabled>
+                                <span class="memory-card-face memory-card-back">?</span>
+                            </button>
+                            <button class="memory-card" type="button" disabled>
+                                <span class="memory-card-face memory-card-back">?</span>
+                            </button>
+                            <button class="memory-card" type="button" disabled>
+                                <span class="memory-card-face memory-card-back">?</span>
+                            </button>
+                            <button class="memory-card" type="button" disabled>
+                                <span class="memory-card-face memory-card-back">?</span>
+                            </button>
+                            <button class="memory-card" type="button" disabled>
+                                <span class="memory-card-face memory-card-back">?</span>
+                            </button>
+                            <button class="memory-card" type="button" disabled>
+                                <span class="memory-card-face memory-card-back">?</span>
+                            </button>
+                        </div>
+                        <div class="games-stage-toolbar">
+                            <button id="memoryGameStartBtn" class="btn btn-primary" type="button">Start Memory Cards</button>
+                            <button id="memoryGameResetBtn" class="btn btn-secondary" type="button" disabled>New Board</button>
                         </div>
                     </div>
 
                     <div class="games-preview-panel">
-                        <p class="games-preview-label">Now practice this sign</p>
-                        <div class="games-sign-focus">add</div>
-                        <p class="games-preview-note">
-                            First version can use watch, repeat, and next. Later we can attach
-                            MediaPipe-based camera feedback for child practice.
-                        </p>
-                        <div class="games-control-row">
-                            <button class="btn btn-secondary" type="button" disabled>Watch Again</button>
-                            <button class="btn btn-primary" type="button" disabled>Next Sign</button>
+                        <div class="games-score-grid" aria-label="Memory game progress">
+                            <article class="games-score-card">
+                                <h4>Pairs</h4>
+                                <p id="memoryGamePairsValue">0</p>
+                            </article>
+                            <article class="games-score-card">
+                                <h4>Moves</h4>
+                                <p id="memoryGameMovesValue">0</p>
+                            </article>
+                            <article class="games-score-card">
+                                <h4>Stars</h4>
+                                <p id="memoryGameStarsValue">0</p>
+                            </article>
                         </div>
+                        <p class="games-preview-label">How to play</p>
+                        <p id="memoryGamePrompt" class="games-panel-status">
+                            Flip one word card and one sign-video card to find a matching pair.
+                        </p>
+                        <div class="memory-game-guide">
+                            <div class="memory-guide-card">
+                                <span class="memory-guide-badge">Word Card</span>
+                                <strong>3</strong>
+                                <span>three</span>
+                            </div>
+                            <div class="memory-guide-card memory-guide-card-video">
+                                <span class="memory-guide-badge">Sign Card</span>
+                                <strong>▶</strong>
+                                <span>watch the sign clip</span>
+                            </div>
+                        </div>
+                        <p id="memoryGameFeedback" class="games-feedback">
+                            Start the game to load a real memory board from the current sign dataset.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mathPreview" class="games-preview">
+                <div class="games-preview-head">
+                    <div>
+                        <p class="games-preview-kicker">Game 3</p>
+                        <h3>Count and Add</h3>
+                    </div>
+                    <span class="games-preview-tag" id="mathGameTag">Number practice</span>
+                </div>
+
+                <div class="games-preview-split">
+                    <div class="games-preview-stage games-preview-stage-math">
+                        <div class="games-preview-stage-header">
+                            <span>Solve the sum</span>
+                            <span id="mathGameRoundLabel">Round 0</span>
+                        </div>
+                        <div class="math-game-stage-card">
+                            <p class="math-game-kicker">Count and add</p>
+                            <div id="mathGameEquation" class="math-game-equation">2 + 3 = ?</div>
+                            <div id="mathGameCounters" class="math-game-counters" aria-hidden="true">
+                                <div class="math-counter-group">
+                                    <span class="math-counter-dot"></span>
+                                    <span class="math-counter-dot"></span>
+                                </div>
+                                <span class="math-counter-plus">+</span>
+                                <div class="math-counter-group math-counter-group-secondary">
+                                    <span class="math-counter-dot"></span>
+                                    <span class="math-counter-dot"></span>
+                                    <span class="math-counter-dot"></span>
+                                </div>
+                            </div>
+                            <p id="mathGameHint" class="math-game-hint">
+                                Use the colored dots to help you count the total.
+                            </p>
+                        </div>
+                        <div class="games-stage-toolbar">
+                            <button id="mathGameStartBtn" class="btn btn-primary" type="button">Start Maths Game</button>
+                            <button id="mathGameNextBtn" class="btn btn-secondary" type="button" disabled>Next Sum</button>
+                        </div>
+                    </div>
+
+                    <div class="games-preview-panel">
+                        <div class="games-score-grid" aria-label="Maths game progress">
+                            <article class="games-score-card">
+                                <h4>Rounds</h4>
+                                <p id="mathGameRoundsValue">0</p>
+                            </article>
+                            <article class="games-score-card">
+                                <h4>Correct</h4>
+                                <p id="mathGameCorrectValue">0</p>
+                            </article>
+                            <article class="games-score-card">
+                                <h4>Stars</h4>
+                                <p id="mathGameStarsValue">0</p>
+                            </article>
+                        </div>
+                        <p class="games-preview-label">Pick the answer</p>
+                        <p id="mathGamePrompt" class="games-panel-status">
+                            Start the maths game, count the dots, and tap the correct answer.
+                        </p>
+                        <div id="mathGameChoices" class="games-choice-grid" aria-live="polite">
+                            <button class="games-choice games-choice-placeholder" type="button" disabled>
+                                <span class="games-choice-main">3</span>
+                                <span class="games-choice-helper">three</span>
+                            </button>
+                            <button class="games-choice games-choice-placeholder" type="button" disabled>
+                                <span class="games-choice-main">4</span>
+                                <span class="games-choice-helper">four</span>
+                            </button>
+                            <button class="games-choice games-choice-placeholder" type="button" disabled>
+                                <span class="games-choice-main">5</span>
+                                <span class="games-choice-helper">five</span>
+                            </button>
+                            <button class="games-choice games-choice-placeholder" type="button" disabled>
+                                <span class="games-choice-main">6</span>
+                                <span class="games-choice-helper">six</span>
+                            </button>
+                        </div>
+                        <p id="mathGameFeedback" class="games-feedback">
+                            Start the maths game to see the first little puzzle.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -243,8 +417,8 @@
                     <p>Reuse the current mapped sign clips and token names as the question source.</p>
                 </article>
                 <article class="summary-card">
-                    <h3>Unity Avatar</h3>
-                    <p>Reuse the WebGL Unity scene for the Copy the Sign game instead of building a new avatar system.</p>
+                    <h3>Maths Practice</h3>
+                    <p>Short counting rounds add a simple number game that feels friendly for younger children.</p>
                 </article>
                 <article class="summary-card">
                     <h3>Learning Flow</h3>
@@ -252,7 +426,7 @@
                 </article>
                 <article class="summary-card">
                     <h3>Next Build Step</h3>
-                    <p>Match the Sign is now playable. Next, connect single-sign Unity playback for Copy the Sign.</p>
+                    <p>Match the Sign, Memory Cards, and Count and Add are now playable with quick child-friendly rounds.</p>
                 </article>
             </div>
         </section>

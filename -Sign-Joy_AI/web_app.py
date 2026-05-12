@@ -363,7 +363,7 @@ def _build_match_game_catalog(pool: str = "starter") -> list[dict[str, Any]]:
     return starter_entries or entries
 
 
-def _build_match_game_round(pool: str = "starter", choice_count: int = 3, exclude_token: str = "") -> dict[str, Any] | None:
+def _build_match_game_round(pool: str = "starter", choice_count: int = 4, exclude_token: str = "") -> dict[str, Any] | None:
     catalog = _build_match_game_catalog(pool)
     if len(catalog) < 2:
         return None
@@ -396,6 +396,31 @@ def _build_match_game_round(pool: str = "starter", choice_count: int = 3, exclud
             for item in choices
         ],
         "available_tokens": len(catalog),
+    }
+
+
+def _build_memory_cards_round(pool: str = "starter", pair_count: int = 3) -> dict[str, Any] | None:
+    catalog = _build_match_game_catalog(pool)
+    if len(catalog) < 2:
+        return None
+
+    normalized_pair_count = max(2, min(pair_count, 4, len(catalog)))
+    chosen_pairs = random.sample(catalog, normalized_pair_count)
+
+    return {
+        "pool": pool,
+        "pair_count": normalized_pair_count,
+        "available_tokens": len(catalog),
+        "pairs": [
+            {
+                "token": item["token"],
+                "display_text": item["display_text"],
+                "helper_text": item["helper_text"],
+                "category": item["category"],
+                "video_url": item["video_url"],
+            }
+            for item in chosen_pairs
+        ],
     }
 
 
@@ -2140,12 +2165,27 @@ def games_match_sign_round():
     if pool not in {"starter", "full"}:
         pool = "starter"
 
-    choice_count = _parse_clamped_int_arg(request.args.get("choices", 3), 3, 2, 4)
+    choice_count = _parse_clamped_int_arg(request.args.get("choices", 4), 4, 2, 4)
     exclude_token = str(request.args.get("exclude", "")).strip()
     round_payload = _build_match_game_round(pool=pool, choice_count=choice_count, exclude_token=exclude_token)
 
     if round_payload is None:
         return jsonify({"error": "Not enough mapped sign clips are available to build a game round."}), 400
+
+    return jsonify(round_payload)
+
+
+@app.get("/api/games/memory-cards/round")
+def games_memory_cards_round():
+    pool = str(request.args.get("pool", "starter")).strip().lower() or "starter"
+    if pool not in {"starter", "full"}:
+        pool = "starter"
+
+    pair_count = _parse_clamped_int_arg(request.args.get("pairs", 3), 3, 2, 4)
+    round_payload = _build_memory_cards_round(pool=pool, pair_count=pair_count)
+
+    if round_payload is None:
+        return jsonify({"error": "Not enough mapped sign clips are available to build a memory cards round."}), 400
 
     return jsonify(round_payload)
 
