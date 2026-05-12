@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Joy Games | Playful Sign Language Practice</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="games-page">
+    <div class="bg-orb bg-orb-a"></div>
+    <div class="bg-orb bg-orb-b"></div>
+    <div class="bg-orb bg-orb-c"></div>
+    <div class="bg-grid"></div>
+
+    <nav class="top-nav" aria-label="Main navigation">
+        <a class="brand-mark" href="{{ url_for('index') }}" aria-label="Go to home">
+            <span class="brand-badge" aria-hidden="true">SL</span>
+            <span>Sign Joy</span>
+        </a>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('learn') }}">Learning App</a>
+            <a href="#gamesCatalog">Games</a>
+            <a href="#gameWorkspace">Play Zone</a>
+        </div>
+    </nav>
+
+    <main class="page games-shell">
+        <header class="games-hero reveal">
+            <div class="games-hero-copy">
+                <p class="eyebrow">Play and practice</p>
+                <h1>Interactive sign language games for curious little learners.</h1>
+                <p class="games-subtitle">
+                    This page is designed for young children to learn signs through short,
+                    playful activities. Each game is simple, visual, and built to feel safe,
+                    rewarding, and joyful for deaf and non-verbal learners.
+                </p>
+                <div class="games-hero-actions">
+                    <a class="btn btn-primary" href="#matchPreview">Start Match Game</a>
+                    <a class="btn btn-secondary" href="{{ url_for('learn') }}">Open Learning App</a>
+                </div>
+                <div class="games-pill-row" aria-label="Why this page helps">
+                    <span class="games-pill">Large buttons</span>
+                    <span class="games-pill">Short rounds</span>
+                    <span class="games-pill">Visual prompts</span>
+                    <span class="games-pill">Positive rewards</span>
+                </div>
+            </div>
+
+            <div class="games-hero-art" aria-hidden="true">
+                <div class="games-hero-card games-hero-card-main">
+                    <p>Today&rsquo;s goal</p>
+                    <strong>Learn 3 signs</strong>
+                    <span>Watch, match, and copy with the avatar.</span>
+                </div>
+                <div class="games-hero-card games-hero-card-side">
+                    <p>Reward</p>
+                    <strong>3 stars</strong>
+                    <span>Earn a star for each finished round.</span>
+                </div>
+                <div class="games-hero-buddy">Hi!</div>
+            </div>
+        </header>
+
+        <section id="gamesCatalog" class="panel reveal">
+            <div class="section-head">
+                <h2>Starter Game Cards</h2>
+            </div>
+            <p class="meta-note">
+                These are the first two games we should build first because they are simple,
+                educational, and a strong fit for your current sign dataset and Unity avatar flow.
+            </p>
+
+            <div class="games-card-grid">
+                <article class="games-card games-card-match">
+                    <div class="games-card-badge">Build First</div>
+                    <div class="games-card-icon" aria-hidden="true">Aa</div>
+                    <h3>Match the Sign</h3>
+                    <p>
+                        The child watches one sign animation and taps the correct word from
+                        2 or 3 large choices.
+                    </p>
+                    <ul class="games-feature-list">
+                        <li>Best for early recognition</li>
+                        <li>Uses existing sign clips immediately</li>
+                        <li>Low reading load with large prompts</li>
+                    </ul>
+                    <div class="games-card-actions">
+                        <a class="btn btn-primary" href="#matchPreview">Play Match Game</a>
+                        <button class="btn btn-ghost" type="button" disabled>Starter Pool</button>
+                    </div>
+                </article>
+
+                <article class="games-card games-card-copy">
+                    <div class="games-card-badge">Build Second</div>
+                    <div class="games-card-icon" aria-hidden="true">3D</div>
+                    <h3>Copy the Sign</h3>
+                    <p>
+                        The Unity avatar performs one sign at a time while the child watches,
+                        copies, and moves to the next sign.
+                    </p>
+                    <ul class="games-feature-list">
+                        <li>Best use of the Unity avatar</li>
+                        <li>Encourages movement and repetition</li>
+                        <li>Can later add camera practice feedback</li>
+                    </ul>
+                    <div class="games-card-actions">
+                        <a class="btn btn-secondary" href="#copyPreview">Preview Layout</a>
+                        <button class="btn btn-ghost" type="button" disabled>Playable Soon</button>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section id="gameWorkspace" class="panel reveal">
+            <div class="section-head">
+                <h2>Play Zone Layout</h2>
+            </div>
+            <p class="meta-note">
+                This workspace shows how each game can feel inside the app before we wire the
+                real dataset and avatar playback into it.
+            </p>
+
+            <div id="matchPreview" class="games-preview">
+                <div class="games-preview-head">
+                    <div>
+                        <p class="games-preview-kicker">Game 1</p>
+                        <h3>Match the Sign</h3>
+                    </div>
+                    <span class="games-preview-tag" id="matchGameTag">Recognition practice</span>
+                </div>
+
+                <div class="games-preview-split">
+                    <div class="games-preview-stage">
+                        <div class="games-preview-stage-header">
+                            <span>Watch the sign</span>
+                            <span id="matchGameRoundLabel">Round 0</span>
+                        </div>
+                        <div class="games-preview-video games-preview-video-live">
+                            <video
+                                id="matchGameVideo"
+                                class="games-match-video"
+                                playsinline
+                                muted
+                                loop
+                                preload="metadata"
+                            ></video>
+                            <div id="matchGameVideoFallback" class="games-preview-video-fallback">
+                                Press <strong>Start Match Game</strong> to load the first sign clip.
+                            </div>
+                        </div>
+                        <div class="games-stage-toolbar">
+                            <button id="matchGameStartBtn" class="btn btn-primary" type="button">Start Match Game</button>
+                            <button id="matchGameReplayBtn" class="btn btn-secondary" type="button" disabled>Replay Clip</button>
+                            <button id="matchGameNextBtn" class="btn btn-ghost" type="button" disabled>Next Round</button>
+                        </div>
+                    </div>
+
+                    <div class="games-preview-panel">
+                        <div class="games-score-grid" aria-label="Match game progress">
+                            <article class="games-score-card">
+                                <h4>Rounds</h4>
+                                <p id="matchGameRoundsValue">0</p>
+                            </article>
+                            <article class="games-score-card">
+                                <h4>Correct</h4>
+                                <p id="matchGameCorrectValue">0</p>
+                            </article>
+                            <article class="games-score-card">
+                                <h4>Stars</h4>
+                                <p id="matchGameStarsValue">0</p>
+                            </article>
+                        </div>
+                        <p class="games-preview-label">Which sign is this?</p>
+                        <p id="matchGamePrompt" class="games-panel-status">
+                            Watch the sign clip, then tap the matching answer.
+                        </p>
+                        <div id="matchGameChoices" class="games-choice-grid" aria-live="polite">
+                            <button class="games-choice games-choice-placeholder" type="button" disabled>
+                                <span class="games-choice-main">1</span>
+                                <span class="games-choice-helper">one</span>
+                            </button>
+                            <button class="games-choice games-choice-placeholder" type="button" disabled>
+                                <span class="games-choice-main">add</span>
+                                <span class="games-choice-helper">addition</span>
+                            </button>
+                            <button class="games-choice games-choice-placeholder" type="button" disabled>
+                                <span class="games-choice-main">3</span>
+                                <span class="games-choice-helper">three</span>
+                            </button>
+                        </div>
+                        <p id="matchGameFeedback" class="games-feedback">
+                            Start the game to load a real sign clip from the current dataset.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="copyPreview" class="games-preview">
+                <div class="games-preview-head">
+                    <div>
+                        <p class="games-preview-kicker">Game 2</p>
+                        <h3>Copy the Sign</h3>
+                    </div>
+                    <span class="games-preview-tag">Avatar-guided practice</span>
+                </div>
+
+                <div class="games-preview-split">
+                    <div class="games-preview-stage games-preview-stage-unity">
+                        <div class="games-preview-stage-header">
+                            <span>Unity avatar</span>
+                            <span>Watch then try</span>
+                        </div>
+                        <div class="games-preview-unity-frame">
+                            <div class="games-preview-avatar">3D Avatar</div>
+                            <p>Embedded Unity avatar scene will be reused here.</p>
+                        </div>
+                    </div>
+
+                    <div class="games-preview-panel">
+                        <p class="games-preview-label">Now practice this sign</p>
+                        <div class="games-sign-focus">add</div>
+                        <p class="games-preview-note">
+                            First version can use watch, repeat, and next. Later we can attach
+                            MediaPipe-based camera feedback for child practice.
+                        </p>
+                        <div class="games-control-row">
+                            <button class="btn btn-secondary" type="button" disabled>Watch Again</button>
+                            <button class="btn btn-primary" type="button" disabled>Next Sign</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel reveal">
+            <div class="section-head">
+                <h2>How We Reuse Existing Project Parts</h2>
+            </div>
+            <div class="summary-grid">
+                <article class="summary-card">
+                    <h3>Sign Dataset</h3>
+                    <p>Reuse the current mapped sign clips and token names as the question source.</p>
+                </article>
+                <article class="summary-card">
+                    <h3>Unity Avatar</h3>
+                    <p>Reuse the WebGL Unity scene for the Copy the Sign game instead of building a new avatar system.</p>
+                </article>
+                <article class="summary-card">
+                    <h3>Learning Flow</h3>
+                    <p>Keep the game rounds short, visual, and encouraging for young learners.</p>
+                </article>
+                <article class="summary-card">
+                    <h3>Next Build Step</h3>
+                    <p>Match the Sign is now playable. Next, connect single-sign Unity playback for Copy the Sign.</p>
+                </article>
+            </div>
+        </section>
+    </main>
+    <script src="{{ url_for('static', filename='games.js') }}"></script>
+</body>
+</html>

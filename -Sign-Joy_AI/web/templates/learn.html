@@ -19,6 +19,7 @@
         </a>
         <div class="nav-links">
             <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('games') }}">Games</a>
             <a href="#inputPanel">Start</a>
             <a href="#overlayPanel">Animations</a>
             <a href="#sequencePanel">Signs</a>
@@ -139,28 +140,36 @@
                 </div>
             </div>
             <p id="unityWebStatus" class="meta-note">
-                Process input to prepare the embedded Unity WebGL scene below the 2D overlay.
+                Process input to load the embedded Unity avatar scene and the live sign-by-sign tracker.
             </p>
 
-            <div id="unityWebStage" class="unity-webgl-stage">
-                <canvas id="unityWebCanvas" class="unity-webgl-canvas" aria-label="Embedded Unity WebGL scene"></canvas>
-                <div id="unityWebFallback" class="unity-webgl-fallback">
-                    Unity WebGL scene not loaded yet. Build the Unity WebGL export, then click play here.
-                </div>
-                <div id="unityWebLoading" class="unity-webgl-loading" hidden>
-                    <div class="unity-webgl-loading-card">
-                        <p id="unityWebLoadingLabel" class="unity-webgl-loading-label">Loading Unity scene...</p>
-                        <div class="unity-webgl-progress-track" aria-hidden="true">
-                            <div id="unityWebLoadingBar" class="unity-webgl-progress-bar"></div>
+            <div class="unity-webgl-split">
+                <div id="unityWebStage" class="unity-webgl-stage">
+                    <canvas id="unityWebCanvas" class="unity-webgl-canvas" aria-label="Embedded Unity WebGL scene"></canvas>
+                    <div id="unityWebFallback" class="unity-webgl-fallback">
+                        Unity WebGL scene not loaded yet. Build the Unity WebGL export, then click play here.
+                    </div>
+                    <div id="unityWebLoading" class="unity-webgl-loading" hidden>
+                        <div class="unity-webgl-loading-card">
+                            <p id="unityWebLoadingLabel" class="unity-webgl-loading-label">Loading Unity scene...</p>
+                            <div class="unity-webgl-progress-track" aria-hidden="true">
+                                <div id="unityWebLoadingBar" class="unity-webgl-progress-bar"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <p class="avatar-current">
-                Current Token: <span id="unityWebCurrentToken">-</span>
-            </p>
-            <div id="unityWebTimeline" class="avatar-timeline"></div>
+                <div class="unity-webgl-token-stage">
+                    <div class="unity-webgl-token-card">
+                        <p class="unity-webgl-token-label">Now Signing</p>
+                        <div id="unityWebTokenDisplay" class="unity-webgl-token-display">-</div>
+                        <p id="unityWebTokenMeta" class="unity-webgl-token-meta">
+                            Process input to animate the current Unity token here.
+                        </p>
+                        <div id="unityWebTimeline" class="unity-webgl-token-timeline"></div>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section id="sequencePanel" class="panel reveal">

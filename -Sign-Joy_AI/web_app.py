@@ -1,10 +1,11 @@
 import json
 from pathlib import Path
 import os
+import random
 import socket
 from threading import Event, Lock, Thread
 from typing import Any
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 import cv2
 import mediapipe as mp
@@ -280,6 +281,122 @@ def _parse_video_path_list(raw_paths: list[Any], deduplicate: bool = False) -> l
             seen.add(resolved)
 
     return video_paths
+
+
+MATCH_GAME_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi"}
+MATCH_GAME_FOLDER_TOKEN_MAP = {
+    "addition": ("add", "ADD", "addition"),
+    "subtraction": ("subtract", "SUBTRACT", "subtraction"),
+    "multiplication": ("multiply", "MULTIPLY", "multiplication"),
+    "divide": ("divide", "DIVIDE", "division"),
+    "equal": ("equal", "EQUAL", "equal"),
+}
+MATCH_GAME_STARTER_TOKENS = {"1", "2", "3", "4", "5", "add", "equal"}
+
+
+def _pick_match_game_video(folder_path: Path) -> Path | None:
+    if not folder_path.exists() or not folder_path.is_dir():
+        return None
+
+    files = [f for f in folder_path.iterdir() if f.suffix.lower() in MATCH_GAME_VIDEO_EXTENSIONS]
+    if not files:
+        return None
+
+    files.sort(key=lambda p: (0 if p.suffix.lower() == ".mp4" else 1, p.name.lower()))
+    return files[0]
+
+
+def _match_game_entry_from_folder(folder_path: Path) -> dict[str, Any] | None:
+    folder_name = folder_path.name.strip()
+    folder_key = folder_name.lower()
+    token = ""
+    display_text = ""
+    helper_text = ""
+    category = "token"
+
+    if ". " in folder_name:
+        number_part, word_part = folder_name.split(". ", 1)
+        token = number_part.strip()
+        display_text = token
+        helper_text = word_part.strip().title()
+        category = "number"
+    elif folder_key in MATCH_GAME_FOLDER_TOKEN_MAP:
+        token, display_text, helper_text = MATCH_GAME_FOLDER_TOKEN_MAP[folder_key]
+        category = "operator"
+    else:
+        return None
+
+    video_path = _pick_match_game_video(folder_path)
+    if video_path is None:
+        return None
+
+    relative = video_path.relative_to(DATASET_ROOT).as_posix()
+    return {
+        "token": token,
+        "display_text": display_text,
+        "helper_text": helper_text,
+        "category": category,
+        "video_relative_path": relative,
+        "video_url": f"/media/{quote(relative, safe='/')}",
+    }
+
+
+def _build_match_game_catalog(pool: str = "starter") -> list[dict[str, Any]]:
+    if not DATASET_ROOT.exists():
+        return []
+
+    entries: list[dict[str, Any]] = []
+    for folder in DATASET_ROOT.iterdir():
+        if not folder.is_dir():
+            continue
+        entry = _match_game_entry_from_folder(folder)
+        if entry is None:
+            continue
+        entries.append(entry)
+
+    entries.sort(key=lambda item: (item["category"], item["token"]))
+
+    if pool == "full":
+        return entries
+
+    starter_entries = [item for item in entries if item["token"] in MATCH_GAME_STARTER_TOKENS]
+    return starter_entries or entries
+
+
+def _build_match_game_round(pool: str = "starter", choice_count: int = 3, exclude_token: str = "") -> dict[str, Any] | None:
+    catalog = _build_match_game_catalog(pool)
+    if len(catalog) < 2:
+        return None
+
+    normalized_choice_count = max(2, min(choice_count, 4, len(catalog)))
+    eligible_catalog = [item for item in catalog if item["token"] != exclude_token] or catalog
+    prompt = random.choice(eligible_catalog)
+
+    distractor_pool = [item for item in catalog if item["token"] != prompt["token"]]
+    if len(distractor_pool) < normalized_choice_count - 1:
+        return None
+
+    choices = random.sample(distractor_pool, normalized_choice_count - 1)
+    choices.append(prompt)
+    random.shuffle(choices)
+
+    return {
+        "pool": pool,
+        "choice_count": normalized_choice_count,
+        "correct_token": prompt["token"],
+        "prompt": prompt,
+        "choices": [
+            {
+                "token": item["token"],
+                "display_text": item["display_text"],
+                "helper_text": item["helper_text"],
+                "category": item["category"],
+                "is_correct": item["token"] == prompt["token"],
+            }
+            for item in choices
+        ],
+        "available_tokens": len(catalog),
+    }
 
 
 def _landmark_to_triplet(landmark) -> list[float]:
@@ -2001,6 +2118,11 @@ def learn():
     return render_template("learn.html")
 
 
+@app.get("/games")
+def games():
+    return render_template("games.html")
+
+
 @app.get("/api/health")
 def health():
     return jsonify(
@@ -2010,6 +2132,22 @@ def health():
             "dataset_exists": DATASET_ROOT.exists(),
         }
     )
+
+
+@app.get("/api/games/match-sign/round")
+def games_match_sign_round():
+    pool = str(request.args.get("pool", "starter")).strip().lower() or "starter"
+    if pool not in {"starter", "full"}:
+        pool = "starter"
+
+    choice_count = _parse_clamped_int_arg(request.args.get("choices", 3), 3, 2, 4)
+    exclude_token = str(request.args.get("exclude", "")).strip()
+    round_payload = _build_match_game_round(pool=pool, choice_count=choice_count, exclude_token=exclude_token)
+
+    if round_payload is None:
+        return jsonify({"error": "Not enough mapped sign clips are available to build a game round."}), 400
+
+    return jsonify(round_payload)
 
 
 @app.post("/api/process")

@@ -21,6 +21,7 @@
             <a href="#how-it-works">How it works</a>
             <a href="#lessons">Lessons</a>
             <a href="#videos">Videos</a>
+            <a href="{{ url_for('games') }}">Games</a>
         </div>
         <a class="sj-nav-button" href="{{ url_for('learn') }}">Open App</a>
     </nav>
@@ -36,6 +37,7 @@
                 </p>
                 <div class="sj-hero-actions">
                     <a class="sj-btn sj-btn-primary" href="{{ url_for('learn') }}">Start Learning</a>
+                    <a class="sj-btn sj-btn-secondary" href="{{ url_for('games') }}">Play Games</a>
                     <button
                         class="sj-btn sj-btn-secondary"
                         type="button"
