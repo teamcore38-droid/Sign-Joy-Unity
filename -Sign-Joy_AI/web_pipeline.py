@@ -225,3 +225,151 @@ def process_input_text(user_text: str) -> dict[str, Any]:
         "sequence_units": visual_sequence_units,
         "unmapped_units": unmapped_units,
     }
+
+
+LITERATURE_ROOT = PROJECT_ROOT / "datasets" / "literature"
+LITERATURE_VIDEOS_DIR = LITERATURE_ROOT / "videos"
+
+_literature_media_map = None
+
+def get_literature_media_map() -> dict[str, Path]:
+    global _literature_media_map
+    if _literature_media_map is None:
+        _literature_media_map = {}
+        if LITERATURE_VIDEOS_DIR.exists():
+            for cat_dir in LITERATURE_VIDEOS_DIR.iterdir():
+                if not cat_dir.is_dir():
+                    continue
+                
+                # a_z contains direct files
+                if cat_dir.name == "a_z":
+                    for item in cat_dir.iterdir():
+                        if item.is_file() and item.suffix.lower() in ['.mp4', '.mov']:
+                            word_key = item.stem.lower()
+                            if word_key not in _literature_media_map:
+                                _literature_media_map[word_key] = item
+                else:
+                    # other categories contain word directories containing video files
+                    for word_dir in cat_dir.iterdir():
+                        if not word_dir.is_dir():
+                            continue
+                        
+                        word_key = word_dir.name.lower()
+                        videos = [v for v in word_dir.iterdir() if v.suffix.lower() in ['.mp4', '.mov']]
+                        if videos:
+                            videos.sort(key=lambda p: p.name.lower())
+                            
+                            # Prioritize pronoun 'i' under nouns over alphabet 'i'
+                            if word_key == "i":
+                                if cat_dir.name == "nouns":
+                                    _literature_media_map[word_key] = videos[0]
+                            else:
+                                if word_key not in _literature_media_map:
+                                    _literature_media_map[word_key] = videos[0]
+            
+            # Fallback for 'i' if nouns is missing
+            if "i" not in _literature_media_map:
+                for cat_dir in LITERATURE_VIDEOS_DIR.iterdir():
+                    if cat_dir.name == "a_z":
+                        i_file = cat_dir / "i.mp4"
+                        if i_file.exists():
+                            _literature_media_map["i"] = i_file
+                            
+    return _literature_media_map
+
+
+def _match_literature_phrases(tokens: list[str], media_map: dict[str, Path]) -> list[dict[str, Any]]:
+    import difflib
+    from urllib.parse import quote
+    matched_units = []
+    i = 0
+    n = len(tokens)
+    word_map_keys = set(media_map.keys())
+    
+    while i < n:
+        matched = False
+        # Try matching phrases of decreasing lengths from 5 down to 1
+        for length in range(min(5, n - i), 0, -1):
+            phrase_tokens = tokens[i : i + length]
+            phrase_key = "_".join(phrase_tokens)
+            
+            if phrase_key in word_map_keys:
+                video_path = media_map[phrase_key]
+                relative_path = f"literature/videos/{video_path.relative_to(LITERATURE_VIDEOS_DIR).as_posix()}"
+                
+                matched_units.append({
+                    "unit": phrase_key,
+                    "kind": "phrase" if length > 1 else "token",
+                    "source": " ".join(phrase_tokens),
+                    "is_mapped": True,
+                    "video_relative_path": relative_path,
+                    "video_url": f"/media/{quote(relative_path, safe='/')}",
+                    "video_file": video_path.name
+                })
+                i += length
+                matched = True
+                break
+        
+        if not matched:
+            # Fall back to single unmatched token
+            unmatched_token = tokens[i]
+            # Get close suggestions
+            suggestions = difflib.get_close_matches(unmatched_token, list(word_map_keys), n=3, cutoff=0.5)
+            matched_units.append({
+                "unit": unmatched_token,
+                "kind": "token",
+                "source": unmatched_token,
+                "is_mapped": False,
+                "video_relative_path": None,
+                "video_url": None,
+                "video_file": None,
+                "suggestions": suggestions
+            })
+            i += 1
+            
+    return matched_units
+
+
+def process_input_text_literature(user_text: str) -> dict[str, Any]:
+    if not user_text or not user_text.strip():
+        raise ValueError("Input text is required.")
+
+    translated = _translate_to_english(user_text)
+    english_text = translated["english_text"]
+
+    tokens = _tokenize(english_text)
+    
+    media_map = get_literature_media_map()
+    
+    visual_units = _match_literature_phrases(tokens, media_map)
+    
+    unmapped_units = sorted({item["unit"] for item in visual_units if not item["is_mapped"]})
+    
+    # Extract suggestions for easy display
+    suggestions = {
+        item["unit"]: item["suggestions"] 
+        for item in visual_units 
+        if not item["is_mapped"] and item.get("suggestions")
+    }
+
+    return {
+        "input_text": user_text,
+        "english_text": english_text,
+        "detected_language": translated["detected_language"],
+        "was_translated": translated["was_translated"],
+        "translation_error": translated["translation_error"],
+        "input_tokens": tokens,
+        "input_units": visual_units,
+        "keywords": {"numbers": [], "operators": []},
+        "calculation": {
+            "expression": "",
+            "result": None,
+            "is_valid": False,
+        },
+        "sequence_mode": "literature",
+        "teaching_sequence": [],
+        "sequence_units": visual_units,
+        "unmapped_units": unmapped_units,
+        "suggestions": suggestions
+    }
+

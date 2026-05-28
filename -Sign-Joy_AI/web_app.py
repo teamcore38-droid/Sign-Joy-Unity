@@ -236,11 +236,18 @@ def _resolve_dataset_video_path(relative_path: str) -> Path | None:
     if not clean:
         return None
 
-    candidate = (DATASET_ROOT / clean).resolve()
-    try:
-        candidate.relative_to(DATASET_ROOT_RESOLVED)
-    except ValueError:
-        return None
+    if clean.startswith("literature/"):
+        candidate = (DATASET_ROOT.parent / clean).resolve()
+        try:
+            candidate.relative_to(DATASET_ROOT.parent.resolve())
+        except ValueError:
+            return None
+    else:
+        candidate = (DATASET_ROOT / clean).resolve()
+        try:
+            candidate.relative_to(DATASET_ROOT_RESOLVED)
+        except ValueError:
+            return None
 
     if not candidate.exists() or not candidate.is_file():
         return None
@@ -638,6 +645,39 @@ def _extract_unity_sequence(video_paths: list[Path]) -> dict[str, Any]:
 
     try:
         for clip_index, video_path in enumerate(video_paths):
+            if video_path.suffix.lower() == ".npy":
+                import numpy as np
+                sk = np.load(str(video_path))
+                T = sk.shape[0]
+                if sk.size == T * 126:
+                    sk4 = sk.reshape(T, 2, 21, 3)
+                    for t in range(T):
+                        left_hand = [
+                            {"x": round(float(pt[0]), 5), "y": round(float(pt[1]), 5), "z": round(float(pt[2]), 5)}
+                            for pt in sk4[t, 0]
+                        ]
+                        right_hand = [
+                            {"x": round(float(pt[0]), 5), "y": round(float(pt[1]), 5), "z": round(float(pt[2]), 5)}
+                            for pt in sk4[t, 1]
+                        ]
+                        
+                        # Zero out if entirely zeros
+                        if all(pt["x"] == 0.0 and pt["y"] == 0.0 and pt["z"] == 0.0 for pt in left_hand):
+                            left_hand = []
+                        if all(pt["x"] == 0.0 and pt["y"] == 0.0 and pt["z"] == 0.0 for pt in right_hand):
+                            right_hand = []
+
+                        frame_payload = {
+                            "left_hand": left_hand,
+                            "right_hand": right_hand,
+                            "pose": [],
+                            "clip": video_path.stem,
+                            "sequence_index": clip_index,
+                            "delay_ms": 33.33
+                        }
+                        frames.append(frame_payload)
+                continue
+
             cap = cv2.VideoCapture(str(video_path))
             if not cap.isOpened():
                 continue
@@ -768,6 +808,54 @@ def _run_unity_bridge(
         for clip_index, video_path in enumerate(video_paths):
             if stop_event.is_set():
                 break
+
+            if video_path.suffix.lower() == ".npy":
+                _set_unity_bridge_status(
+                    current_index=clip_index,
+                    clip_label=video_path.stem,
+                    message=f"Streaming skeleton clip {clip_index + 1} of {len(video_paths)} to Unity: {video_path.stem}",
+                )
+                import numpy as np
+                sk = np.load(str(video_path))
+                T = sk.shape[0]
+                if sk.size == T * 126:
+                    sk4 = sk.reshape(T, 2, 21, 3)
+                    frame_delay = 1.0 / float(target_fps) if target_fps > 0 else 1.0 / 30.0
+                    for t in range(T):
+                        if stop_event.is_set():
+                            break
+                        frame_started_at = time.perf_counter()
+                        
+                        left_hand = [
+                            {"x": round(float(pt[0]), 5), "y": round(float(pt[1]), 5), "z": round(float(pt[2]), 5)}
+                            for pt in sk4[t, 0]
+                        ]
+                        right_hand = [
+                            {"x": round(float(pt[0]), 5), "y": round(float(pt[1]), 5), "z": round(float(pt[2]), 5)}
+                            for pt in sk4[t, 1]
+                        ]
+                        
+                        if all(pt["x"] == 0.0 and pt["y"] == 0.0 and pt["z"] == 0.0 for pt in left_hand):
+                            left_hand = []
+                        if all(pt["x"] == 0.0 and pt["y"] == 0.0 and pt["z"] == 0.0 for pt in right_hand):
+                            right_hand = []
+                            
+                        payload = {
+                            "left_hand": left_hand,
+                            "right_hand": right_hand,
+                            "pose": []
+                        }
+                        
+                        msg = f"{json.dumps(payload, separators=(',', ':'))}<EOM>"
+                        socket_client.send(msg.encode("utf-8"))
+                        frames_sent += 1
+                        _set_unity_bridge_status(frames_sent=frames_sent)
+                        
+                        elapsed = time.perf_counter() - frame_started_at
+                        remaining = frame_delay - elapsed
+                        if remaining > 0:
+                            time.sleep(remaining)
+                continue
 
             cap = cv2.VideoCapture(str(video_path))
             if not cap.isOpened():
@@ -2194,12 +2282,17 @@ def games_memory_cards_round():
 def process():
     payload = request.get_json(silent=True) or {}
     text = str(payload.get("text", "")).strip()
+    mode = str(payload.get("mode", "math")).strip().lower()
 
     if not text:
         return jsonify({"error": "Please provide text in the request body."}), 400
 
     try:
-        response = process_input_text(text)
+        if mode == "literature":
+            from web_pipeline import process_input_text_literature
+            response = process_input_text_literature(text)
+        else:
+            response = process_input_text(text)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:  # noqa: BLE001
@@ -2210,7 +2303,9 @@ def process():
 
 @app.get("/media/<path:relative_path>")
 def media(relative_path: str):
-    decoded = unquote(relative_path)
+    decoded = unquote(relative_path).strip().replace("\\", "/")
+    if decoded.startswith("literature/"):
+        return send_from_directory(DATASET_ROOT.parent, decoded, as_attachment=False)
     return send_from_directory(DATASET_ROOT, decoded, as_attachment=False)
 
 

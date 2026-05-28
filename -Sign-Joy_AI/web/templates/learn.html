@@ -47,7 +47,10 @@
         </header>
 
         <section id="inputPanel" class="panel reveal">
-            <h2>Type Something to Sign</h2>
+            <div class="section-head">
+                <h2>Type Something to Sign</h2>
+                <button id="clearInputBtn" class="btn btn-ghost">Clear Input</button>
+            </div>
             <label for="textInput" class="label">Your sentence or math idea</label>
             <textarea id="textInput" rows="3" placeholder="Try: one plus two"></textarea>
 
@@ -56,6 +59,12 @@
 
                 <button id="micStartBtn" class="btn btn-secondary">Use My Voice</button>
                 <button id="micStopBtn" class="btn btn-ghost" disabled>Stop</button>
+
+                <label for="learningMode" class="label-inline">Learning Mode</label>
+                <select id="learningMode">
+                    <option value="math" selected>Math & Numbers</option>
+                    <option value="literature">Literature (General Words)</option>
+                </select>
 
                 <label for="speechLang" class="label-inline">Speech Language</label>
                 <select id="speechLang">

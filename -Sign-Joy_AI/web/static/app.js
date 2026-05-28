@@ -2,7 +2,9 @@ const textInput = document.getElementById("textInput");
 const processBtn = document.getElementById("processBtn");
 const micStartBtn = document.getElementById("micStartBtn");
 const micStopBtn = document.getElementById("micStopBtn");
+const clearInputBtn = document.getElementById("clearInputBtn");
 const speechLang = document.getElementById("speechLang");
+const learningModeEl = document.getElementById("learningMode");
 const statusLine = document.getElementById("statusLine");
 
 const detectedLanguage = document.getElementById("detectedLanguage");
@@ -1978,20 +1980,34 @@ function renderSequenceUnits(units) {
         node.querySelector(".token-kind").textContent = u.kind;
         const mediaWrap = node.querySelector(".media-wrap");
 
-        if (u.is_mapped && u.video_url) {
-            const video = document.createElement("video");
-            video.src = u.video_url;
-            video.controls = true;
-            video.preload = "metadata";
-            video.playsInline = true;
-            mediaWrap.appendChild(video);
-            mappedVideoEntries.push({
-                video,
-                index: i,
-                token: u.unit,
-                relativePath: u.video_relative_path || "",
-                videoUrl: u.video_url || "",
-            });
+        if (u.is_mapped && (u.video_url || (u.video_relative_path && u.video_relative_path.startsWith("literature/")))) {
+            if (u.video_relative_path && u.video_relative_path.startsWith("literature/") && u.video_relative_path.endsWith(".npy")) {
+                const fallback = document.createElement("div");
+                fallback.className = "media-fallback literature-fallback";
+                fallback.textContent = "3D Skeleton Animation Ready";
+                mediaWrap.appendChild(fallback);
+                mappedVideoEntries.push({
+                    video: null,
+                    index: i,
+                    token: u.unit,
+                    relativePath: u.video_relative_path || "",
+                    videoUrl: "",
+                });
+            } else {
+                const video = document.createElement("video");
+                video.src = u.video_url;
+                video.controls = true;
+                video.preload = "metadata";
+                video.playsInline = true;
+                mediaWrap.appendChild(video);
+                mappedVideoEntries.push({
+                    video,
+                    index: i,
+                    token: u.unit,
+                    relativePath: u.video_relative_path || "",
+                    videoUrl: u.video_url || "",
+                });
+            }
         } else {
             const fallback = document.createElement("div");
             fallback.className = "media-fallback";
@@ -2236,10 +2252,11 @@ async function processInput() {
     processBtn.disabled = true;
     setStatus("Processing input...", "info");
     try {
+        const mode = learningModeEl ? learningModeEl.value : "math";
         const response = await fetch("/api/process", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text }),
+            body: JSON.stringify({ text, mode }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Request failed.");
@@ -2303,15 +2320,21 @@ async function playSequence() {
 
         for (const entry of mappedVideoEntries) {
             if (runId !== playbackRun) return;
-            entry.video.currentTime = 0;
-            await entry.video.play();
-            await new Promise((resolve) => {
-                const onEnded = () => {
-                    entry.video.removeEventListener("ended", onEnded);
-                    resolve();
-                };
-                entry.video.addEventListener("ended", onEnded);
-            });
+            if (entry.video) {
+                entry.video.currentTime = 0;
+                await entry.video.play();
+                await new Promise((resolve) => {
+                    const onEnded = () => {
+                        entry.video.removeEventListener("ended", onEnded);
+                        resolve();
+                    };
+                    entry.video.addEventListener("ended", onEnded);
+                });
+            } else {
+                // Literature mode precomputed skeleton playback simulation
+                // Sleep for 2000ms to allow 3D character / overlay to perform the gesture
+                await sleep(2000);
+            }
         }
         if (overlayPaths.length && overlaySessionId) {
             await waitForOverlayProgressComplete(overlaySessionId, overlayStreamRunId ?? overlayRun);
@@ -2463,6 +2486,16 @@ if (overlayStreamEl) {
 micStartBtn.addEventListener("click", () => { if (recognition) { recognition.lang = speechLang.value; recognition.start(); } });
 micStopBtn.addEventListener("click", () => { if (recognition) recognition.stop(); });
 textInput.addEventListener("keydown", (event) => { if ((event.ctrlKey || event.metaKey) && event.key === "Enter") processInput(); });
+clearInputBtn.addEventListener("click", () => {
+    textInput.value = "";
+    setStatus("Ready.", "info");
+    if (detectedLanguage) detectedLanguage.textContent = "-";
+    if (englishText) englishText.textContent = "-";
+    if (expressionText) expressionText.textContent = "-";
+    if (resultText) resultText.textContent = "-";
+    if (inputUnitsEl) inputUnitsEl.innerHTML = "";
+    textInput.focus();
+});
 
 if (presentationChannel) {
     const onPresentationChannelMessage = (event) => {
