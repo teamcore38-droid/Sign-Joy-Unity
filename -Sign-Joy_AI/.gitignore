@@ -17,6 +17,7 @@ Thumbs.db
 
 # Runtime outputs
 outputs/
+datasets/
 
 # Logs
 *.log

@@ -39,3 +39,4 @@ Unity/*.VC.db
 -Sign-Joy_AI/outputs/
 -Sign-Joy_AI/*.log
 -Sign-Joy_AI/*.err
+-Sign-Joy_AI/datasets/
