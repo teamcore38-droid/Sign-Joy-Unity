@@ -1,4 +1,33 @@
 const textInput = document.getElementById("textInput");
+
+// ---------------------------------------------------------------------------
+// Unity WebGL keyboard-capture guard.
+// Unity's WebGL build defaults to WebGLInput.captureAllKeyboardInput = true,
+// which makes the embedded 3D scene attach keyboard listeners to the whole
+// document and swallow EVERY keystroke on the page once it has loaded. That is
+// why typing into the text box stops working after a sign animation plays, and
+// why clearing the input alone cannot restore it. We register capture-phase
+// listeners on window (these run before Unity's listeners) and, whenever a text
+// field is focused, stop the key event from propagating to Unity. The default
+// action (inserting the character) still happens, so the textarea keeps working
+// while Unity still receives keys when its own canvas is focused.
+["keydown", "keypress", "keyup"].forEach((eventType) => {
+    window.addEventListener(eventType, (event) => {
+        const el = document.activeElement;
+        const isTextField = el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT" || el.isContentEditable);
+        if (!isTextField) return;
+        // Preserve the in-app Ctrl/Cmd+Enter "process input" shortcut, since stopping
+        // propagation below prevents the textarea's own keydown listener from firing.
+        if (eventType === "keydown" && (event.ctrlKey || event.metaKey) && event.key === "Enter") {
+            event.preventDefault();
+            if (typeof processInput === "function") processInput();
+        }
+        // Stop the key from reaching Unity's document-level capture listeners so the
+        // character is still inserted into the focused field.
+        event.stopImmediatePropagation();
+    }, true);
+});
+
 const processBtn = document.getElementById("processBtn");
 const micStartBtn = document.getElementById("micStartBtn");
 const micStopBtn = document.getElementById("micStopBtn");
@@ -2487,6 +2516,25 @@ micStartBtn.addEventListener("click", () => { if (recognition) { recognition.lan
 micStopBtn.addEventListener("click", () => { if (recognition) recognition.stop(); });
 textInput.addEventListener("keydown", (event) => { if ((event.ctrlKey || event.metaKey) && event.key === "Enter") processInput(); });
 clearInputBtn.addEventListener("click", () => {
+    // 1. Invalidate every in-flight playback loop / scheduled autoplay so that any
+    //    async sequence currently awaiting a video, sleep, or stream frame bails out
+    //    immediately (each loop checks these run guards and returns early).
+    playbackRun += 1;
+    overlayAutoplayRun += 1;
+
+    // 2. Hard-stop all running animations/streams across every visualization channel.
+    //    These are idempotent and safe to call even when a channel isn't active.
+    try { stopUnityWebPlayback("Unity 3D scene reset. Ready for new input."); } catch (e) {}
+    try { stopOverlayStream("Overlay reset. Ready for new input."); } catch (e) {}
+    try { stopSkeletonStream("Cartoon instructor reset. Ready for new input."); } catch (e) {}
+    try { stopGesture3DPlayback("3D character reset. Ready for new input."); } catch (e) {}
+    try { stopSignAvatarComparison("Comparison reset. Ready for new input."); } catch (e) {}
+    try { void stopUnityDesktopPlayback("Unity desktop playback reset for new input."); } catch (e) {}
+
+    // 3. Stop any in-progress browser speech capture.
+    try { if (recognition) recognition.stop(); } catch (e) {}
+
+    // 4. Clear the text + all summary/result fields.
     textInput.value = "";
     setStatus("Ready.", "info");
     if (detectedLanguage) detectedLanguage.textContent = "-";
@@ -2494,6 +2542,19 @@ clearInputBtn.addEventListener("click", () => {
     if (expressionText) expressionText.textContent = "-";
     if (resultText) resultText.textContent = "-";
     if (inputUnitsEl) inputUnitsEl.innerHTML = "";
+
+    // 5. Reset all generated sequence units, timelines, active playbacks, and streams.
+    renderSequenceUnits([]);
+
+    // 6. Clear Unity WebGL scene avatar frame back to default T-pose.
+    clearUnityWebFrame();
+
+    // 7. Re-enable the controls so a brand new input can be processed right away
+    //    without needing a page refresh.
+    if (processBtn) processBtn.disabled = false;
+    if (micStartBtn) micStartBtn.disabled = false;
+    if (micStopBtn) micStopBtn.disabled = true;
+
     textInput.focus();
 });
 

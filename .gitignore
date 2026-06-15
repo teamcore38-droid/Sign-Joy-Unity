@@ -40,3 +40,12 @@ Unity/*.VC.db
 -Sign-Joy_AI/*.log
 -Sign-Joy_AI/*.err
 -Sign-Joy_AI/datasets/
+
+# PyInstaller & Setup Installer build outputs
+build/
+dist/
+*.spec
+SignJoyDesktop/dist/
+SignJoyDesktop/vosk_model/
+tmp-webapp.err
+tmp-webapp.log

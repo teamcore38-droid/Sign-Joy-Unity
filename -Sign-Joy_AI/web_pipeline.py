@@ -341,14 +341,55 @@ def process_input_text_literature(user_text: str) -> dict[str, Any]:
     
     media_map = get_literature_media_map()
     
-    visual_units = _match_literature_phrases(tokens, media_map)
+    matched_units = _match_literature_phrases(tokens, media_map)
+
+    # Build the playable sequence. For every single word we FIRST emit a sign for
+    # each of its letters (finger-spelling), and ONLY AFTER all the letter signs do
+    # we emit the whole-word sign. This guarantees the animation plays the spelled
+    # letters first and the full word sign last, instead of jumping straight to the
+    # word sign. Multi-word phrases (joined with "_") are left as-is and not spelled.
+    visual_units = []
+    for item in matched_units:
+        word = item["unit"]
+        is_single_word = ("_" not in word) and word.isalpha()
+        letters = [c for c in word if c.isalpha()]
+
+        if is_single_word and len(letters) > 1:
+            # Step 1: play the sign for each letter of the word, in order.
+            for char in letters:
+                char_key = char.lower()
+                if char_key in media_map:
+                    video_path = media_map[char_key]
+                    relative_path = f"literature/videos/{video_path.relative_to(LITERATURE_VIDEOS_DIR).as_posix()}"
+                    visual_units.append({
+                        "unit": char.upper(),
+                        "kind": "letter",
+                        "source": word,
+                        "is_mapped": True,
+                        "video_relative_path": relative_path,
+                        "video_url": f"/media/{quote(relative_path, safe='/')}",
+                        "video_file": video_path.name
+                    })
+                else:
+                    visual_units.append({
+                        "unit": char.upper(),
+                        "kind": "letter",
+                        "source": word,
+                        "is_mapped": False,
+                        "video_relative_path": None,
+                        "video_url": None,
+                        "video_file": None
+                    })
+
+        # Step 2: finally, play the whole-word (or phrase) sign last.
+        visual_units.append(item)
     
     unmapped_units = sorted({item["unit"] for item in visual_units if not item["is_mapped"]})
     
     # Extract suggestions for easy display
     suggestions = {
         item["unit"]: item["suggestions"] 
-        for item in visual_units 
+        for item in matched_units
         if not item["is_mapped"] and item.get("suggestions")
     }
 
@@ -372,4 +413,3 @@ def process_input_text_literature(user_text: str) -> dict[str, Any]:
         "unmapped_units": unmapped_units,
         "suggestions": suggestions
     }
-
